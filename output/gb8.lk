@@ -1,0 +1,17 @@
+-mjwx
+-i output/gb8.ihx
+-b _CODE = 0x0200
+-b _DATA = 0xc000
+-k C:/SDCC/lib/gbz80
+-k C:/SDCC/bin/../share/sdcc/lib/gbz80
+-l gbz80.lib
+-l gbz80
+output/out/gb.rel
+output/out/oam_dma_wait.rel
+output/out/pixel_scale_table.rel
+output/out/main.rel
+output/out/int_vector.rel
+output/out/rom.rel
+output/out/bg_tiles.rel
+
+-e

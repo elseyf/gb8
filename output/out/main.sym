@@ -1,0 +1,70 @@
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 1.
+Hexadecimal [32-Bits]
+
+Symbol Table
+
+    .__.$$$.                                                    =   00002710 L
+    .__.ABS.                                                    =   00000000 G
+    .__.CPU.                                                    =   00000000 L
+    .__.H$L.                                                    =   00000000 L
+    _bg_pal                                                         ******** GX
+    _bg_tiles                                                       ******** GX
+    _fastcpy                                                        ******** GX
+    _fill                                                           ******** GX
+  0 _gb8_bcd_vx                                                     00000363 GR
+  0 _gb8_clear_screen                                               00000235 GR
+  1 _gb8_delay_timer                                                00000058 GR
+    _gb8_display                                                =   0000D800 G
+  0 _gb8_draw_sprite                                                00000259 GR
+  0 _gb8_font                                                       000001E5 GR
+  0 _gb8_get_key                                                    00000246 GR
+  1 _gb8_i                                                          00000056 GR
+  0 _gb8_key_map                                                    000001D5 GR
+  1 _gb8_mem                                                        0000005A GR
+  1 _gb8_pc                                                         00000002 GR
+  0 _gb8_rnd                                                        00000398 GR
+  1 _gb8_seed                                                       00000055 GR
+  1 _gb8_sound_timer                                                00000059 GR
+  1 _gb8_stack                                                      00000004 GR
+  1 _gb8_stack_p                                                    00000044 GR
+  0 _gb8_step                                                       000003AD GR
+  1 _gb8_v                                                          00000045 GR
+    _key_hold                                                       ******** GX
+  0 _main                                                           00000000 GR
+    _oam_dma_wait                                                   ******** GX
+    _oam_dma_wait_size                                              ******** GX
+    _obj_pal0                                                       ******** GX
+    _obj_pal1                                                       ******** GX
+    _pixel_scale_table                                              ******** GX
+    _read_joypad                                                    ******** GX
+    _rom                                                            ******** GX
+    _scroll_x                                                       ******** GX
+    _scroll_y                                                       ******** GX
+    _set_bg_chr                                                     ******** GX
+    _set_bg_map_select                                              ******** GX
+    _set_bg_map_tile                                                ******** GX
+  1 _sp_buffer                                                      00000000 GR
+    _vblank_happened                                                ******** GX
+    dest_p                                                      =   00000002 
+    line                                                        =   00000000 
+    n                                                           =   00000009 
+    px                                                          =   00000007 
+    py                                                          =   00000008 
+    qbyte                                                       =   00000001 
+    src_b                                                       =   00000000 
+    vx                                                          =   00000002 
+
+
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 2.
+Hexadecimal [32-Bits]
+
+Area Table
+
+   0 _CODE                                      size      B83   flags    0
+   1 _DATA                                      size     105A   flags    0
+   2 _DABS                                      size        0   flags    8
+   3 _HOME                                      size        0   flags    0
+   4 _GSINIT                                    size        0   flags    0
+   5 _GSFINAL                                   size        0   flags    0
+   6 _CABS                                      size        0   flags    8
+

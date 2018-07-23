@@ -1,0 +1,198 @@
+ASxxxx Linker V03.00 + NoICE + sdld,  page 1.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000000  .__.ABS.                           
+     00000000  l__CABS                         
+     00000000  l__DABS                         
+     00000000  l__GSFINAL                      
+     00000000  l__GSINIT                       
+     00000000  l__HOME                         
+     00000000  l__INTERRUPT                    
+     00000000  s__CABS                         
+     00000000  s__DABS                         
+     00000000  s__INTERRUPT                    
+     00000000  s__INTERRUPT0                   
+     00000000  s__INTERRUPT1                   
+     00000000  s__INTERRUPT2                   
+     00000000  s__INTERRUPT3                   
+     00000000  s__INTERRUPT4                   
+     00000000  s__INTERRUPT5                   
+     00000003  l__INTERRUPT0                   
+     00000003  l__INTERRUPT1                   
+     00000003  l__INTERRUPT2                   
+     00000003  l__INTERRUPT3                   
+     00000003  l__INTERRUPT4                   
+     00000003  l__INTERRUPT5                   
+     00000200  s__CODE                         
+     00001188  l__DATA                         
+     00002606  l__CODE                         
+     0000C000  s__DATA                         
+     0000D188  s__GSFINAL                      
+     0000D188  s__GSINIT                       
+     0000D188  s__HOME                         
+     0000D800  _gb8_display                       main
+     0000FFC0  _hblank_transfer_counter           gb
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 2.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+_CODE                               00000200    00002606 =        9734. bytes (REL,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000200  _vblank_isr                        gb
+     000004C4  _lcd_stat_isr                      gb
+     000004DB  _timer_isr                         gb
+     000004E4  _serial_isr                        gb
+     000004EE  _joypad_isr                        gb
+     000004F8  _init_gameboy                      gb
+     0000050D  _set_bg_map_select                 gb
+     00000528  _set_win_map_select                gb
+     00000543  _fastcpy                           gb
+     00000561  _fill                              gb
+     0000057C  _set_bg_chr                        gb
+     000005A6  _set_bg_map                        gb
+     000005D0  _set_bg_map_tile                   gb
+     000005E0  _update_bg_map_tile                gb
+     0000065C  _set_win_map                       gb
+     00000686  _set_win_map_tile                  gb
+     00000696  _update_win_map_tile               gb
+     00000712  _set_obj_chr                       gb
+     0000073C  _set_obj                           gb
+     00000764  _copy_to_oam_obj                   gb
+     00000788  _read_joypad                       gb
+     000007AC  _key_push                          gb
+     000007C5  _key_hold                          gb
+     000007D2  _key_release                       gb
+     000007EB  _oam_dma_wait                      oam_dma_wait
+     000007F5  _oam_dma_wait_end                  oam_dma_wait
+     000007F5  _oam_dma_wait_size                 oam_dma_wait
+     000007F6  _pixel_scale_table                 
+     000009F6  _main                              main
+     00000BCB  _gb8_key_map                       main
+     00000BDB  _gb8_font                          main
+     00000C2B  _gb8_clear_screen                  main
+     00000C3C  _gb8_get_key                       main
+     00000C4F  _gb8_draw_sprite                   main
+     00000D59  _gb8_bcd_vx                        main
+     00000D8E  _gb8_rnd                           main
+     00000DA3  _gb8_step                          main
+     00001579  _rom                               
+     00002006  _bg_tiles                          
+ASxxxx Linker V03.00 + NoICE + sdld,  page 3.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+_DATA                               0000C000    00001188 =        4488. bytes (REL,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     0000C000  _obj                               gb
+     0000C0A0  _vram_transfer_size                gb
+     0000C0A1  _vram_transfer_buffer              gb
+     0000C121  _vram_transfer_addr                gb
+     0000C123  _bg_pal                            gb
+     0000C124  _obj_pal0                          gb
+     0000C125  _obj_pal1                          gb
+     0000C126  _obj_slot                          gb
+     0000C127  _joy0                              gb
+     0000C128  _old_joy0                          gb
+     0000C129  _scroll_x                          gb
+     0000C12A  _scroll_y                          gb
+     0000C12B  _offset_x                          gb
+     0000C12C  _offset_y                          gb
+     0000C12D  _vblank_happened                   gb
+     0000C12E  _sp_buffer                         main
+     0000C130  _gb8_pc                            main
+     0000C132  _gb8_stack                         main
+     0000C172  _gb8_stack_p                       main
+     0000C173  _gb8_v                             main
+     0000C183  _gb8_seed                          main
+     0000C184  _gb8_i                             main
+     0000C186  _gb8_delay_timer                   main
+     0000C187  _gb8_sound_timer                   main
+     0000C188  _gb8_mem                           main
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 4.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+_INTERRUPT0                         00000000    00000003 =           3. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 5.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+_INTERRUPT1                         00000000    00000003 =           3. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 6.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+_INTERRUPT2                         00000000    00000003 =           3. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 7.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+_INTERRUPT3                         00000000    00000003 =           3. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 8.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+_INTERRUPT4                         00000000    00000003 =           3. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 9.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+_INTERRUPT5                         00000000    00000003 =           3. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 10.
+
+Files Linked                              [ module(s) ]
+
+output/out/gb.rel                         [ gb ]
+output/out/oam_dma_wait.rel               [ oam_dma_wait ]
+output/out/pixel_scale_table.rel          [  ]
+output/out/main.rel                       [ main ]
+output/out/int_vector.rel                 [ int_vector ]
+output/out/rom.rel                        [  ]
+output/out/bg_tiles.rel                   [  ]
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 11.
+
+User Base Address Definitions
+
+_CODE = 0x0200
+_DATA = 0xc000
+
+

@@ -1,0 +1,66 @@
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 1.
+Hexadecimal [32-Bits]
+
+
+
+                                      1 ;Vector Table, by el_seyf
+                                      2 
+                                      3 .module int_vector
+                                      4 
+                                      5 .area _INTERRUPT(ABS)
+                                      6 
+                                      7 .globl _vblank_isr
+                                      8 .globl _lcd_stat_isr
+                                      9 .globl _timer_isr
+                                     10 .globl _serial_isr
+                                     11 .globl _joypad_isr
+                                     12 .globl _init_gameboy
+                                     13 
+    00000040                         14 .org 0x40
+    00000040                         15 _vblank_vect:
+    00000040 C3 00 00                16     jp _vblank_isr
+                                     17     
+    00000048                         18 .org 0x48
+    00000048                         19 _lcd_stat_vect:
+    00000048 C3 00 00                20     jp _lcd_stat_isr
+                                     21     
+    00000050                         22 .org 0x50
+    00000050                         23 _timer_vect:
+    00000050 C3 00 00                24     jp _timer_isr
+                                     25     
+    00000058                         26 .org 0x58
+    00000058                         27 _serial_vect:
+    00000058 C3 00 00                28     jp _serial_isr
+                                     29     
+    00000060                         30 .org 0x60
+    00000060                         31 _joypad_vect:
+    00000060 C3 00 00                32     jp _joypad_isr
+                                     33     
+                                     34 
+    00000100                         35 .org 0x100
+    00000100 C3 00 00                36     jp _init_gameboy
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 2.
+Hexadecimal [32-Bits]
+
+Symbol Table
+
+    .__.$$$.=   00002710 L   |     .__.ABS.=   00000000 G   |     .__.CPU.=   00000000 L
+    .__.H$L.=   00000000 L   |     _init_ga    ******** GX  |     _joypad_    ******** GX
+  6 _joypad_    00000060 R   |     _lcd_sta    ******** GX  |   3 _lcd_sta    00000048 R
+    _serial_    ******** GX  |   5 _serial_    00000058 R   |     _timer_i    ******** GX
+  4 _timer_v    00000050 R   |     _vblank_    ******** GX  |   2 _vblank_    00000040 R
+
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 3.
+Hexadecimal [32-Bits]
+
+Area Table
+
+   0 _CODE      size        0   flags    0
+   1 _INTERRU   size        0   flags    8
+   2 _INTERRU   size        3   flags    8
+   3 _INTERRU   size        3   flags    8
+   4 _INTERRU   size        3   flags    8
+   5 _INTERRU   size        3   flags    8
+   6 _INTERRU   size        3   flags    8
+   7 _INTERRU   size        3   flags    8
+

@@ -1,0 +1,1562 @@
+                                      1 ;--------------------------------------------------------
+                                      2 ; File Created by SDCC : free open source ANSI-C Compiler
+                                      3 ; Version 3.7.1 #10455 (MINGW64)
+                                      4 ;--------------------------------------------------------
+                                      5 	.module gb
+                                      6 	.optsdcc -mgbz80
+                                      7 	
+                                      8 ;--------------------------------------------------------
+                                      9 ; Public variables in this module
+                                     10 ;--------------------------------------------------------
+                                     11 	.globl _hblank_transfer_counter
+                                     12 	.globl _vblank_happened
+                                     13 	.globl _offset_y
+                                     14 	.globl _offset_x
+                                     15 	.globl _scroll_y
+                                     16 	.globl _scroll_x
+                                     17 	.globl _old_joy0
+                                     18 	.globl _joy0
+                                     19 	.globl _obj_slot
+                                     20 	.globl _obj_pal1
+                                     21 	.globl _obj_pal0
+                                     22 	.globl _bg_pal
+                                     23 	.globl _vram_transfer_addr
+                                     24 	.globl _vram_transfer_buffer
+                                     25 	.globl _vram_transfer_size
+                                     26 	.globl _obj
+                                     27 	.globl _vblank_isr
+                                     28 	.globl _lcd_stat_isr
+                                     29 	.globl _timer_isr
+                                     30 	.globl _serial_isr
+                                     31 	.globl _joypad_isr
+                                     32 	.globl _init_gameboy
+                                     33 	.globl _set_bg_map_select
+                                     34 	.globl _set_win_map_select
+                                     35 	.globl _fastcpy
+                                     36 	.globl _fill
+                                     37 	.globl _set_bg_chr
+                                     38 	.globl _set_bg_map
+                                     39 	.globl _set_bg_map_tile
+                                     40 	.globl _update_bg_map_tile
+                                     41 	.globl _set_win_map
+                                     42 	.globl _set_win_map_tile
+                                     43 	.globl _update_win_map_tile
+                                     44 	.globl _set_obj_chr
+                                     45 	.globl _set_obj
+                                     46 	.globl _copy_to_oam_obj
+                                     47 	.globl _read_joypad
+                                     48 	.globl _key_push
+                                     49 	.globl _key_hold
+                                     50 	.globl _key_release
+                                     51 ;--------------------------------------------------------
+                                     52 ; special function registers
+                                     53 ;--------------------------------------------------------
+                                     54 ;--------------------------------------------------------
+                                     55 ; ram data
+                                     56 ;--------------------------------------------------------
+                                     57 	.area _DATA
+    00000000                         58 _obj::
+    00000000                         59 	.ds 160
+    000000A0                         60 _vram_transfer_size::
+    000000A0                         61 	.ds 1
+    000000A1                         62 _vram_transfer_buffer::
+    000000A1                         63 	.ds 128
+    00000121                         64 _vram_transfer_addr::
+    00000121                         65 	.ds 2
+    00000123                         66 _bg_pal::
+    00000123                         67 	.ds 1
+    00000124                         68 _obj_pal0::
+    00000124                         69 	.ds 1
+    00000125                         70 _obj_pal1::
+    00000125                         71 	.ds 1
+    00000126                         72 _obj_slot::
+    00000126                         73 	.ds 1
+    00000127                         74 _joy0::
+    00000127                         75 	.ds 1
+    00000128                         76 _old_joy0::
+    00000128                         77 	.ds 1
+    00000129                         78 _scroll_x::
+    00000129                         79 	.ds 1
+    0000012A                         80 _scroll_y::
+    0000012A                         81 	.ds 1
+    0000012B                         82 _offset_x::
+    0000012B                         83 	.ds 1
+    0000012C                         84 _offset_y::
+    0000012C                         85 	.ds 1
+    0000012D                         86 _vblank_happened::
+    0000012D                         87 	.ds 1
+                         0000FFC0    88 _hblank_transfer_counter	=	0xffc0
+                                     89 ;--------------------------------------------------------
+                                     90 ; absolute external ram data
+                                     91 ;--------------------------------------------------------
+                                     92 	.area _DABS (ABS)
+                                     93 ;--------------------------------------------------------
+                                     94 ; global & static initialisations
+                                     95 ;--------------------------------------------------------
+                                     96 	.area _HOME
+                                     97 	.area _GSINIT
+                                     98 	.area _GSFINAL
+                                     99 	.area _GSINIT
+                                    100 ;--------------------------------------------------------
+                                    101 ; Home
+                                    102 ;--------------------------------------------------------
+                                    103 	.area _HOME
+                                    104 	.area _HOME
+                                    105 ;--------------------------------------------------------
+                                    106 ; code
+                                    107 ;--------------------------------------------------------
+                                    108 	.area _CODE
+                                    109 ;src/gb.c:25: void vblank_isr() __critical __interrupt __naked {
+                                    110 ;	---------------------------------
+                                    111 ; Function vblank_isr
+                                    112 ; ---------------------------------
+    00000000                        113 _vblank_isr::
+                                    114 ;src/gb.c:100: __endasm;
+    00000000 F5                     115 	push	af
+    00000001 C5                     116 	push	bc
+    00000002 D5                     117 	push	de
+    00000003 E5                     118 	push	hl
+    00000004 08r00r00               119 	ld	(_sp_buffer), sp
+    00000007 31r00r00               120 	ld	sp, #_gb8_display
+    0000000A 21 00 80               121 	ld	hl, #0x8000
+    0000000D                        122 	    0$:
+    0000000D AF                     123 	xor a
+    0000000E E0 0F                  124 	ldh	(0xFF0F), a
+    00000010 76                     125 	halt
+    00000011 00                     126 	nop
+                                    127 	.rept	110
+                                    128 	pop	de
+                                    129 	ld	a, d
+                                    130 	ld	(hl+), a
+                                    131 	ld	a, e
+                                    132 	ld	(hl+), a ;36 per rept
+                                    133 	.endm	;+3960
+    00000012 D1                       1 	pop	de
+    00000013 7A                       2 	ld	a, d
+    00000014 22                       3 	ld	(hl+), a
+    00000015 7B                       4 	ld	a, e
+    00000016 22                       5 	ld	(hl+), a ;36 per rept
+    00000017 D1                       1 	pop	de
+    00000018 7A                       2 	ld	a, d
+    00000019 22                       3 	ld	(hl+), a
+    0000001A 7B                       4 	ld	a, e
+    0000001B 22                       5 	ld	(hl+), a ;36 per rept
+    0000001C D1                       1 	pop	de
+    0000001D 7A                       2 	ld	a, d
+    0000001E 22                       3 	ld	(hl+), a
+    0000001F 7B                       4 	ld	a, e
+    00000020 22                       5 	ld	(hl+), a ;36 per rept
+    00000021 D1                       1 	pop	de
+    00000022 7A                       2 	ld	a, d
+    00000023 22                       3 	ld	(hl+), a
+    00000024 7B                       4 	ld	a, e
+    00000025 22                       5 	ld	(hl+), a ;36 per rept
+    00000026 D1                       1 	pop	de
+    00000027 7A                       2 	ld	a, d
+    00000028 22                       3 	ld	(hl+), a
+    00000029 7B                       4 	ld	a, e
+    0000002A 22                       5 	ld	(hl+), a ;36 per rept
+    0000002B D1                       1 	pop	de
+    0000002C 7A                       2 	ld	a, d
+    0000002D 22                       3 	ld	(hl+), a
+    0000002E 7B                       4 	ld	a, e
+    0000002F 22                       5 	ld	(hl+), a ;36 per rept
+    00000030 D1                       1 	pop	de
+    00000031 7A                       2 	ld	a, d
+    00000032 22                       3 	ld	(hl+), a
+    00000033 7B                       4 	ld	a, e
+    00000034 22                       5 	ld	(hl+), a ;36 per rept
+    00000035 D1                       1 	pop	de
+    00000036 7A                       2 	ld	a, d
+    00000037 22                       3 	ld	(hl+), a
+    00000038 7B                       4 	ld	a, e
+    00000039 22                       5 	ld	(hl+), a ;36 per rept
+    0000003A D1                       1 	pop	de
+    0000003B 7A                       2 	ld	a, d
+    0000003C 22                       3 	ld	(hl+), a
+    0000003D 7B                       4 	ld	a, e
+    0000003E 22                       5 	ld	(hl+), a ;36 per rept
+    0000003F D1                       1 	pop	de
+    00000040 7A                       2 	ld	a, d
+    00000041 22                       3 	ld	(hl+), a
+    00000042 7B                       4 	ld	a, e
+    00000043 22                       5 	ld	(hl+), a ;36 per rept
+    00000044 D1                       1 	pop	de
+    00000045 7A                       2 	ld	a, d
+    00000046 22                       3 	ld	(hl+), a
+    00000047 7B                       4 	ld	a, e
+    00000048 22                       5 	ld	(hl+), a ;36 per rept
+    00000049 D1                       1 	pop	de
+    0000004A 7A                       2 	ld	a, d
+    0000004B 22                       3 	ld	(hl+), a
+    0000004C 7B                       4 	ld	a, e
+    0000004D 22                       5 	ld	(hl+), a ;36 per rept
+    0000004E D1                       1 	pop	de
+    0000004F 7A                       2 	ld	a, d
+    00000050 22                       3 	ld	(hl+), a
+    00000051 7B                       4 	ld	a, e
+    00000052 22                       5 	ld	(hl+), a ;36 per rept
+    00000053 D1                       1 	pop	de
+    00000054 7A                       2 	ld	a, d
+    00000055 22                       3 	ld	(hl+), a
+    00000056 7B                       4 	ld	a, e
+    00000057 22                       5 	ld	(hl+), a ;36 per rept
+    00000058 D1                       1 	pop	de
+    00000059 7A                       2 	ld	a, d
+    0000005A 22                       3 	ld	(hl+), a
+    0000005B 7B                       4 	ld	a, e
+    0000005C 22                       5 	ld	(hl+), a ;36 per rept
+    0000005D D1                       1 	pop	de
+    0000005E 7A                       2 	ld	a, d
+    0000005F 22                       3 	ld	(hl+), a
+    00000060 7B                       4 	ld	a, e
+    00000061 22                       5 	ld	(hl+), a ;36 per rept
+    00000062 D1                       1 	pop	de
+    00000063 7A                       2 	ld	a, d
+    00000064 22                       3 	ld	(hl+), a
+    00000065 7B                       4 	ld	a, e
+    00000066 22                       5 	ld	(hl+), a ;36 per rept
+    00000067 D1                       1 	pop	de
+    00000068 7A                       2 	ld	a, d
+    00000069 22                       3 	ld	(hl+), a
+    0000006A 7B                       4 	ld	a, e
+    0000006B 22                       5 	ld	(hl+), a ;36 per rept
+    0000006C D1                       1 	pop	de
+    0000006D 7A                       2 	ld	a, d
+    0000006E 22                       3 	ld	(hl+), a
+    0000006F 7B                       4 	ld	a, e
+    00000070 22                       5 	ld	(hl+), a ;36 per rept
+    00000071 D1                       1 	pop	de
+    00000072 7A                       2 	ld	a, d
+    00000073 22                       3 	ld	(hl+), a
+    00000074 7B                       4 	ld	a, e
+    00000075 22                       5 	ld	(hl+), a ;36 per rept
+    00000076 D1                       1 	pop	de
+    00000077 7A                       2 	ld	a, d
+    00000078 22                       3 	ld	(hl+), a
+    00000079 7B                       4 	ld	a, e
+    0000007A 22                       5 	ld	(hl+), a ;36 per rept
+    0000007B D1                       1 	pop	de
+    0000007C 7A                       2 	ld	a, d
+    0000007D 22                       3 	ld	(hl+), a
+    0000007E 7B                       4 	ld	a, e
+    0000007F 22                       5 	ld	(hl+), a ;36 per rept
+    00000080 D1                       1 	pop	de
+    00000081 7A                       2 	ld	a, d
+    00000082 22                       3 	ld	(hl+), a
+    00000083 7B                       4 	ld	a, e
+    00000084 22                       5 	ld	(hl+), a ;36 per rept
+    00000085 D1                       1 	pop	de
+    00000086 7A                       2 	ld	a, d
+    00000087 22                       3 	ld	(hl+), a
+    00000088 7B                       4 	ld	a, e
+    00000089 22                       5 	ld	(hl+), a ;36 per rept
+    0000008A D1                       1 	pop	de
+    0000008B 7A                       2 	ld	a, d
+    0000008C 22                       3 	ld	(hl+), a
+    0000008D 7B                       4 	ld	a, e
+    0000008E 22                       5 	ld	(hl+), a ;36 per rept
+    0000008F D1                       1 	pop	de
+    00000090 7A                       2 	ld	a, d
+    00000091 22                       3 	ld	(hl+), a
+    00000092 7B                       4 	ld	a, e
+    00000093 22                       5 	ld	(hl+), a ;36 per rept
+    00000094 D1                       1 	pop	de
+    00000095 7A                       2 	ld	a, d
+    00000096 22                       3 	ld	(hl+), a
+    00000097 7B                       4 	ld	a, e
+    00000098 22                       5 	ld	(hl+), a ;36 per rept
+    00000099 D1                       1 	pop	de
+    0000009A 7A                       2 	ld	a, d
+    0000009B 22                       3 	ld	(hl+), a
+    0000009C 7B                       4 	ld	a, e
+    0000009D 22                       5 	ld	(hl+), a ;36 per rept
+    0000009E D1                       1 	pop	de
+    0000009F 7A                       2 	ld	a, d
+    000000A0 22                       3 	ld	(hl+), a
+    000000A1 7B                       4 	ld	a, e
+    000000A2 22                       5 	ld	(hl+), a ;36 per rept
+    000000A3 D1                       1 	pop	de
+    000000A4 7A                       2 	ld	a, d
+    000000A5 22                       3 	ld	(hl+), a
+    000000A6 7B                       4 	ld	a, e
+    000000A7 22                       5 	ld	(hl+), a ;36 per rept
+    000000A8 D1                       1 	pop	de
+    000000A9 7A                       2 	ld	a, d
+    000000AA 22                       3 	ld	(hl+), a
+    000000AB 7B                       4 	ld	a, e
+    000000AC 22                       5 	ld	(hl+), a ;36 per rept
+    000000AD D1                       1 	pop	de
+    000000AE 7A                       2 	ld	a, d
+    000000AF 22                       3 	ld	(hl+), a
+    000000B0 7B                       4 	ld	a, e
+    000000B1 22                       5 	ld	(hl+), a ;36 per rept
+    000000B2 D1                       1 	pop	de
+    000000B3 7A                       2 	ld	a, d
+    000000B4 22                       3 	ld	(hl+), a
+    000000B5 7B                       4 	ld	a, e
+    000000B6 22                       5 	ld	(hl+), a ;36 per rept
+    000000B7 D1                       1 	pop	de
+    000000B8 7A                       2 	ld	a, d
+    000000B9 22                       3 	ld	(hl+), a
+    000000BA 7B                       4 	ld	a, e
+    000000BB 22                       5 	ld	(hl+), a ;36 per rept
+    000000BC D1                       1 	pop	de
+    000000BD 7A                       2 	ld	a, d
+    000000BE 22                       3 	ld	(hl+), a
+    000000BF 7B                       4 	ld	a, e
+    000000C0 22                       5 	ld	(hl+), a ;36 per rept
+    000000C1 D1                       1 	pop	de
+    000000C2 7A                       2 	ld	a, d
+    000000C3 22                       3 	ld	(hl+), a
+    000000C4 7B                       4 	ld	a, e
+    000000C5 22                       5 	ld	(hl+), a ;36 per rept
+    000000C6 D1                       1 	pop	de
+    000000C7 7A                       2 	ld	a, d
+    000000C8 22                       3 	ld	(hl+), a
+    000000C9 7B                       4 	ld	a, e
+    000000CA 22                       5 	ld	(hl+), a ;36 per rept
+    000000CB D1                       1 	pop	de
+    000000CC 7A                       2 	ld	a, d
+    000000CD 22                       3 	ld	(hl+), a
+    000000CE 7B                       4 	ld	a, e
+    000000CF 22                       5 	ld	(hl+), a ;36 per rept
+    000000D0 D1                       1 	pop	de
+    000000D1 7A                       2 	ld	a, d
+    000000D2 22                       3 	ld	(hl+), a
+    000000D3 7B                       4 	ld	a, e
+    000000D4 22                       5 	ld	(hl+), a ;36 per rept
+    000000D5 D1                       1 	pop	de
+    000000D6 7A                       2 	ld	a, d
+    000000D7 22                       3 	ld	(hl+), a
+    000000D8 7B                       4 	ld	a, e
+    000000D9 22                       5 	ld	(hl+), a ;36 per rept
+    000000DA D1                       1 	pop	de
+    000000DB 7A                       2 	ld	a, d
+    000000DC 22                       3 	ld	(hl+), a
+    000000DD 7B                       4 	ld	a, e
+    000000DE 22                       5 	ld	(hl+), a ;36 per rept
+    000000DF D1                       1 	pop	de
+    000000E0 7A                       2 	ld	a, d
+    000000E1 22                       3 	ld	(hl+), a
+    000000E2 7B                       4 	ld	a, e
+    000000E3 22                       5 	ld	(hl+), a ;36 per rept
+    000000E4 D1                       1 	pop	de
+    000000E5 7A                       2 	ld	a, d
+    000000E6 22                       3 	ld	(hl+), a
+    000000E7 7B                       4 	ld	a, e
+    000000E8 22                       5 	ld	(hl+), a ;36 per rept
+    000000E9 D1                       1 	pop	de
+    000000EA 7A                       2 	ld	a, d
+    000000EB 22                       3 	ld	(hl+), a
+    000000EC 7B                       4 	ld	a, e
+    000000ED 22                       5 	ld	(hl+), a ;36 per rept
+    000000EE D1                       1 	pop	de
+    000000EF 7A                       2 	ld	a, d
+    000000F0 22                       3 	ld	(hl+), a
+    000000F1 7B                       4 	ld	a, e
+    000000F2 22                       5 	ld	(hl+), a ;36 per rept
+    000000F3 D1                       1 	pop	de
+    000000F4 7A                       2 	ld	a, d
+    000000F5 22                       3 	ld	(hl+), a
+    000000F6 7B                       4 	ld	a, e
+    000000F7 22                       5 	ld	(hl+), a ;36 per rept
+    000000F8 D1                       1 	pop	de
+    000000F9 7A                       2 	ld	a, d
+    000000FA 22                       3 	ld	(hl+), a
+    000000FB 7B                       4 	ld	a, e
+    000000FC 22                       5 	ld	(hl+), a ;36 per rept
+    000000FD D1                       1 	pop	de
+    000000FE 7A                       2 	ld	a, d
+    000000FF 22                       3 	ld	(hl+), a
+    00000100 7B                       4 	ld	a, e
+    00000101 22                       5 	ld	(hl+), a ;36 per rept
+    00000102 D1                       1 	pop	de
+    00000103 7A                       2 	ld	a, d
+    00000104 22                       3 	ld	(hl+), a
+    00000105 7B                       4 	ld	a, e
+    00000106 22                       5 	ld	(hl+), a ;36 per rept
+    00000107 D1                       1 	pop	de
+    00000108 7A                       2 	ld	a, d
+    00000109 22                       3 	ld	(hl+), a
+    0000010A 7B                       4 	ld	a, e
+    0000010B 22                       5 	ld	(hl+), a ;36 per rept
+    0000010C D1                       1 	pop	de
+    0000010D 7A                       2 	ld	a, d
+    0000010E 22                       3 	ld	(hl+), a
+    0000010F 7B                       4 	ld	a, e
+    00000110 22                       5 	ld	(hl+), a ;36 per rept
+    00000111 D1                       1 	pop	de
+    00000112 7A                       2 	ld	a, d
+    00000113 22                       3 	ld	(hl+), a
+    00000114 7B                       4 	ld	a, e
+    00000115 22                       5 	ld	(hl+), a ;36 per rept
+    00000116 D1                       1 	pop	de
+    00000117 7A                       2 	ld	a, d
+    00000118 22                       3 	ld	(hl+), a
+    00000119 7B                       4 	ld	a, e
+    0000011A 22                       5 	ld	(hl+), a ;36 per rept
+    0000011B D1                       1 	pop	de
+    0000011C 7A                       2 	ld	a, d
+    0000011D 22                       3 	ld	(hl+), a
+    0000011E 7B                       4 	ld	a, e
+    0000011F 22                       5 	ld	(hl+), a ;36 per rept
+    00000120 D1                       1 	pop	de
+    00000121 7A                       2 	ld	a, d
+    00000122 22                       3 	ld	(hl+), a
+    00000123 7B                       4 	ld	a, e
+    00000124 22                       5 	ld	(hl+), a ;36 per rept
+    00000125 D1                       1 	pop	de
+    00000126 7A                       2 	ld	a, d
+    00000127 22                       3 	ld	(hl+), a
+    00000128 7B                       4 	ld	a, e
+    00000129 22                       5 	ld	(hl+), a ;36 per rept
+    0000012A D1                       1 	pop	de
+    0000012B 7A                       2 	ld	a, d
+    0000012C 22                       3 	ld	(hl+), a
+    0000012D 7B                       4 	ld	a, e
+    0000012E 22                       5 	ld	(hl+), a ;36 per rept
+    0000012F D1                       1 	pop	de
+    00000130 7A                       2 	ld	a, d
+    00000131 22                       3 	ld	(hl+), a
+    00000132 7B                       4 	ld	a, e
+    00000133 22                       5 	ld	(hl+), a ;36 per rept
+    00000134 D1                       1 	pop	de
+    00000135 7A                       2 	ld	a, d
+    00000136 22                       3 	ld	(hl+), a
+    00000137 7B                       4 	ld	a, e
+    00000138 22                       5 	ld	(hl+), a ;36 per rept
+    00000139 D1                       1 	pop	de
+    0000013A 7A                       2 	ld	a, d
+    0000013B 22                       3 	ld	(hl+), a
+    0000013C 7B                       4 	ld	a, e
+    0000013D 22                       5 	ld	(hl+), a ;36 per rept
+    0000013E D1                       1 	pop	de
+    0000013F 7A                       2 	ld	a, d
+    00000140 22                       3 	ld	(hl+), a
+    00000141 7B                       4 	ld	a, e
+    00000142 22                       5 	ld	(hl+), a ;36 per rept
+    00000143 D1                       1 	pop	de
+    00000144 7A                       2 	ld	a, d
+    00000145 22                       3 	ld	(hl+), a
+    00000146 7B                       4 	ld	a, e
+    00000147 22                       5 	ld	(hl+), a ;36 per rept
+    00000148 D1                       1 	pop	de
+    00000149 7A                       2 	ld	a, d
+    0000014A 22                       3 	ld	(hl+), a
+    0000014B 7B                       4 	ld	a, e
+    0000014C 22                       5 	ld	(hl+), a ;36 per rept
+    0000014D D1                       1 	pop	de
+    0000014E 7A                       2 	ld	a, d
+    0000014F 22                       3 	ld	(hl+), a
+    00000150 7B                       4 	ld	a, e
+    00000151 22                       5 	ld	(hl+), a ;36 per rept
+    00000152 D1                       1 	pop	de
+    00000153 7A                       2 	ld	a, d
+    00000154 22                       3 	ld	(hl+), a
+    00000155 7B                       4 	ld	a, e
+    00000156 22                       5 	ld	(hl+), a ;36 per rept
+    00000157 D1                       1 	pop	de
+    00000158 7A                       2 	ld	a, d
+    00000159 22                       3 	ld	(hl+), a
+    0000015A 7B                       4 	ld	a, e
+    0000015B 22                       5 	ld	(hl+), a ;36 per rept
+    0000015C D1                       1 	pop	de
+    0000015D 7A                       2 	ld	a, d
+    0000015E 22                       3 	ld	(hl+), a
+    0000015F 7B                       4 	ld	a, e
+    00000160 22                       5 	ld	(hl+), a ;36 per rept
+    00000161 D1                       1 	pop	de
+    00000162 7A                       2 	ld	a, d
+    00000163 22                       3 	ld	(hl+), a
+    00000164 7B                       4 	ld	a, e
+    00000165 22                       5 	ld	(hl+), a ;36 per rept
+    00000166 D1                       1 	pop	de
+    00000167 7A                       2 	ld	a, d
+    00000168 22                       3 	ld	(hl+), a
+    00000169 7B                       4 	ld	a, e
+    0000016A 22                       5 	ld	(hl+), a ;36 per rept
+    0000016B D1                       1 	pop	de
+    0000016C 7A                       2 	ld	a, d
+    0000016D 22                       3 	ld	(hl+), a
+    0000016E 7B                       4 	ld	a, e
+    0000016F 22                       5 	ld	(hl+), a ;36 per rept
+    00000170 D1                       1 	pop	de
+    00000171 7A                       2 	ld	a, d
+    00000172 22                       3 	ld	(hl+), a
+    00000173 7B                       4 	ld	a, e
+    00000174 22                       5 	ld	(hl+), a ;36 per rept
+    00000175 D1                       1 	pop	de
+    00000176 7A                       2 	ld	a, d
+    00000177 22                       3 	ld	(hl+), a
+    00000178 7B                       4 	ld	a, e
+    00000179 22                       5 	ld	(hl+), a ;36 per rept
+    0000017A D1                       1 	pop	de
+    0000017B 7A                       2 	ld	a, d
+    0000017C 22                       3 	ld	(hl+), a
+    0000017D 7B                       4 	ld	a, e
+    0000017E 22                       5 	ld	(hl+), a ;36 per rept
+    0000017F D1                       1 	pop	de
+    00000180 7A                       2 	ld	a, d
+    00000181 22                       3 	ld	(hl+), a
+    00000182 7B                       4 	ld	a, e
+    00000183 22                       5 	ld	(hl+), a ;36 per rept
+    00000184 D1                       1 	pop	de
+    00000185 7A                       2 	ld	a, d
+    00000186 22                       3 	ld	(hl+), a
+    00000187 7B                       4 	ld	a, e
+    00000188 22                       5 	ld	(hl+), a ;36 per rept
+    00000189 D1                       1 	pop	de
+    0000018A 7A                       2 	ld	a, d
+    0000018B 22                       3 	ld	(hl+), a
+    0000018C 7B                       4 	ld	a, e
+    0000018D 22                       5 	ld	(hl+), a ;36 per rept
+    0000018E D1                       1 	pop	de
+    0000018F 7A                       2 	ld	a, d
+    00000190 22                       3 	ld	(hl+), a
+    00000191 7B                       4 	ld	a, e
+    00000192 22                       5 	ld	(hl+), a ;36 per rept
+    00000193 D1                       1 	pop	de
+    00000194 7A                       2 	ld	a, d
+    00000195 22                       3 	ld	(hl+), a
+    00000196 7B                       4 	ld	a, e
+    00000197 22                       5 	ld	(hl+), a ;36 per rept
+    00000198 D1                       1 	pop	de
+    00000199 7A                       2 	ld	a, d
+    0000019A 22                       3 	ld	(hl+), a
+    0000019B 7B                       4 	ld	a, e
+    0000019C 22                       5 	ld	(hl+), a ;36 per rept
+    0000019D D1                       1 	pop	de
+    0000019E 7A                       2 	ld	a, d
+    0000019F 22                       3 	ld	(hl+), a
+    000001A0 7B                       4 	ld	a, e
+    000001A1 22                       5 	ld	(hl+), a ;36 per rept
+    000001A2 D1                       1 	pop	de
+    000001A3 7A                       2 	ld	a, d
+    000001A4 22                       3 	ld	(hl+), a
+    000001A5 7B                       4 	ld	a, e
+    000001A6 22                       5 	ld	(hl+), a ;36 per rept
+    000001A7 D1                       1 	pop	de
+    000001A8 7A                       2 	ld	a, d
+    000001A9 22                       3 	ld	(hl+), a
+    000001AA 7B                       4 	ld	a, e
+    000001AB 22                       5 	ld	(hl+), a ;36 per rept
+    000001AC D1                       1 	pop	de
+    000001AD 7A                       2 	ld	a, d
+    000001AE 22                       3 	ld	(hl+), a
+    000001AF 7B                       4 	ld	a, e
+    000001B0 22                       5 	ld	(hl+), a ;36 per rept
+    000001B1 D1                       1 	pop	de
+    000001B2 7A                       2 	ld	a, d
+    000001B3 22                       3 	ld	(hl+), a
+    000001B4 7B                       4 	ld	a, e
+    000001B5 22                       5 	ld	(hl+), a ;36 per rept
+    000001B6 D1                       1 	pop	de
+    000001B7 7A                       2 	ld	a, d
+    000001B8 22                       3 	ld	(hl+), a
+    000001B9 7B                       4 	ld	a, e
+    000001BA 22                       5 	ld	(hl+), a ;36 per rept
+    000001BB D1                       1 	pop	de
+    000001BC 7A                       2 	ld	a, d
+    000001BD 22                       3 	ld	(hl+), a
+    000001BE 7B                       4 	ld	a, e
+    000001BF 22                       5 	ld	(hl+), a ;36 per rept
+    000001C0 D1                       1 	pop	de
+    000001C1 7A                       2 	ld	a, d
+    000001C2 22                       3 	ld	(hl+), a
+    000001C3 7B                       4 	ld	a, e
+    000001C4 22                       5 	ld	(hl+), a ;36 per rept
+    000001C5 D1                       1 	pop	de
+    000001C6 7A                       2 	ld	a, d
+    000001C7 22                       3 	ld	(hl+), a
+    000001C8 7B                       4 	ld	a, e
+    000001C9 22                       5 	ld	(hl+), a ;36 per rept
+    000001CA D1                       1 	pop	de
+    000001CB 7A                       2 	ld	a, d
+    000001CC 22                       3 	ld	(hl+), a
+    000001CD 7B                       4 	ld	a, e
+    000001CE 22                       5 	ld	(hl+), a ;36 per rept
+    000001CF D1                       1 	pop	de
+    000001D0 7A                       2 	ld	a, d
+    000001D1 22                       3 	ld	(hl+), a
+    000001D2 7B                       4 	ld	a, e
+    000001D3 22                       5 	ld	(hl+), a ;36 per rept
+    000001D4 D1                       1 	pop	de
+    000001D5 7A                       2 	ld	a, d
+    000001D6 22                       3 	ld	(hl+), a
+    000001D7 7B                       4 	ld	a, e
+    000001D8 22                       5 	ld	(hl+), a ;36 per rept
+    000001D9 D1                       1 	pop	de
+    000001DA 7A                       2 	ld	a, d
+    000001DB 22                       3 	ld	(hl+), a
+    000001DC 7B                       4 	ld	a, e
+    000001DD 22                       5 	ld	(hl+), a ;36 per rept
+    000001DE D1                       1 	pop	de
+    000001DF 7A                       2 	ld	a, d
+    000001E0 22                       3 	ld	(hl+), a
+    000001E1 7B                       4 	ld	a, e
+    000001E2 22                       5 	ld	(hl+), a ;36 per rept
+    000001E3 D1                       1 	pop	de
+    000001E4 7A                       2 	ld	a, d
+    000001E5 22                       3 	ld	(hl+), a
+    000001E6 7B                       4 	ld	a, e
+    000001E7 22                       5 	ld	(hl+), a ;36 per rept
+    000001E8 D1                       1 	pop	de
+    000001E9 7A                       2 	ld	a, d
+    000001EA 22                       3 	ld	(hl+), a
+    000001EB 7B                       4 	ld	a, e
+    000001EC 22                       5 	ld	(hl+), a ;36 per rept
+    000001ED D1                       1 	pop	de
+    000001EE 7A                       2 	ld	a, d
+    000001EF 22                       3 	ld	(hl+), a
+    000001F0 7B                       4 	ld	a, e
+    000001F1 22                       5 	ld	(hl+), a ;36 per rept
+    000001F2 D1                       1 	pop	de
+    000001F3 7A                       2 	ld	a, d
+    000001F4 22                       3 	ld	(hl+), a
+    000001F5 7B                       4 	ld	a, e
+    000001F6 22                       5 	ld	(hl+), a ;36 per rept
+    000001F7 D1                       1 	pop	de
+    000001F8 7A                       2 	ld	a, d
+    000001F9 22                       3 	ld	(hl+), a
+    000001FA 7B                       4 	ld	a, e
+    000001FB 22                       5 	ld	(hl+), a ;36 per rept
+    000001FC D1                       1 	pop	de
+    000001FD 7A                       2 	ld	a, d
+    000001FE 22                       3 	ld	(hl+), a
+    000001FF 7B                       4 	ld	a, e
+    00000200 22                       5 	ld	(hl+), a ;36 per rept
+    00000201 D1                       1 	pop	de
+    00000202 7A                       2 	ld	a, d
+    00000203 22                       3 	ld	(hl+), a
+    00000204 7B                       4 	ld	a, e
+    00000205 22                       5 	ld	(hl+), a ;36 per rept
+    00000206 D1                       1 	pop	de
+    00000207 7A                       2 	ld	a, d
+    00000208 22                       3 	ld	(hl+), a
+    00000209 7B                       4 	ld	a, e
+    0000020A 22                       5 	ld	(hl+), a ;36 per rept
+    0000020B D1                       1 	pop	de
+    0000020C 7A                       2 	ld	a, d
+    0000020D 22                       3 	ld	(hl+), a
+    0000020E 7B                       4 	ld	a, e
+    0000020F 22                       5 	ld	(hl+), a ;36 per rept
+    00000210 D1                       1 	pop	de
+    00000211 7A                       2 	ld	a, d
+    00000212 22                       3 	ld	(hl+), a
+    00000213 7B                       4 	ld	a, e
+    00000214 22                       5 	ld	(hl+), a ;36 per rept
+    00000215 D1                       1 	pop	de
+    00000216 7A                       2 	ld	a, d
+    00000217 22                       3 	ld	(hl+), a
+    00000218 7B                       4 	ld	a, e
+    00000219 22                       5 	ld	(hl+), a ;36 per rept
+    0000021A D1                       1 	pop	de
+    0000021B 7A                       2 	ld	a, d
+    0000021C 22                       3 	ld	(hl+), a
+    0000021D 7B                       4 	ld	a, e
+    0000021E 22                       5 	ld	(hl+), a ;36 per rept
+    0000021F D1                       1 	pop	de
+    00000220 7A                       2 	ld	a, d
+    00000221 22                       3 	ld	(hl+), a
+    00000222 7B                       4 	ld	a, e
+    00000223 22                       5 	ld	(hl+), a ;36 per rept
+    00000224 D1                       1 	pop	de
+    00000225 7A                       2 	ld	a, d
+    00000226 22                       3 	ld	(hl+), a
+    00000227 7B                       4 	ld	a, e
+    00000228 22                       5 	ld	(hl+), a ;36 per rept
+    00000229 D1                       1 	pop	de
+    0000022A 7A                       2 	ld	a, d
+    0000022B 22                       3 	ld	(hl+), a
+    0000022C 7B                       4 	ld	a, e
+    0000022D 22                       5 	ld	(hl+), a ;36 per rept
+    0000022E D1                       1 	pop	de
+    0000022F 7A                       2 	ld	a, d
+    00000230 22                       3 	ld	(hl+), a
+    00000231 7B                       4 	ld	a, e
+    00000232 22                       5 	ld	(hl+), a ;36 per rept
+    00000233 D1                       1 	pop	de
+    00000234 7A                       2 	ld	a, d
+    00000235 22                       3 	ld	(hl+), a
+    00000236 7B                       4 	ld	a, e
+    00000237 22                       5 	ld	(hl+), a ;36 per rept
+    00000238 FAr29r01               134 	ld	a, (_scroll_x)
+    0000023B E0 43                  135 	ldh	(0xFF43), a
+    0000023D FAr2Ar01               136 	ld	a, (_scroll_y)
+    00000240 E0 42                  137 	ldh	(0xFF42), a
+                                    138 ;ld	a, (_offset_x)
+                                    139 ;ldh	(0xFF4B), a
+    00000242 FAr2Cr01               140 	ld	a, (_offset_y)
+    00000245 E0 4A                  141 	ldh	(0xFF4A), a
+    00000247 FAr23r01               142 	ld	a, (_bg_pal)
+    0000024A E0 47                  143 	ldh	(0xFF47), a ;+112 ;old +140
+    0000024C 0E 3B                  144 	ld	c, #59 ;+8
+                                    145 	.rept	5
+                                    146 	nop
+                                    147 	.endm	;+20
+    0000024E 00                       1 	nop
+    0000024F 00                       1 	nop
+    00000250 00                       1 	nop
+    00000251 00                       1 	nop
+    00000252 00                       1 	nop
+    00000253                        148 	    1$:
+                                    149 	.rept	65
+                                    150 	nop
+                                    151 	.endm	;+260
+    00000253 00                       1 	nop
+    00000254 00                       1 	nop
+    00000255 00                       1 	nop
+    00000256 00                       1 	nop
+    00000257 00                       1 	nop
+    00000258 00                       1 	nop
+    00000259 00                       1 	nop
+    0000025A 00                       1 	nop
+    0000025B 00                       1 	nop
+    0000025C 00                       1 	nop
+    0000025D 00                       1 	nop
+    0000025E 00                       1 	nop
+    0000025F 00                       1 	nop
+    00000260 00                       1 	nop
+    00000261 00                       1 	nop
+    00000262 00                       1 	nop
+    00000263 00                       1 	nop
+    00000264 00                       1 	nop
+    00000265 00                       1 	nop
+    00000266 00                       1 	nop
+    00000267 00                       1 	nop
+    00000268 00                       1 	nop
+    00000269 00                       1 	nop
+    0000026A 00                       1 	nop
+    0000026B 00                       1 	nop
+    0000026C 00                       1 	nop
+    0000026D 00                       1 	nop
+    0000026E 00                       1 	nop
+    0000026F 00                       1 	nop
+    00000270 00                       1 	nop
+    00000271 00                       1 	nop
+    00000272 00                       1 	nop
+    00000273 00                       1 	nop
+    00000274 00                       1 	nop
+    00000275 00                       1 	nop
+    00000276 00                       1 	nop
+    00000277 00                       1 	nop
+    00000278 00                       1 	nop
+    00000279 00                       1 	nop
+    0000027A 00                       1 	nop
+    0000027B 00                       1 	nop
+    0000027C 00                       1 	nop
+    0000027D 00                       1 	nop
+    0000027E 00                       1 	nop
+    0000027F 00                       1 	nop
+    00000280 00                       1 	nop
+    00000281 00                       1 	nop
+    00000282 00                       1 	nop
+    00000283 00                       1 	nop
+    00000284 00                       1 	nop
+    00000285 00                       1 	nop
+    00000286 00                       1 	nop
+    00000287 00                       1 	nop
+    00000288 00                       1 	nop
+    00000289 00                       1 	nop
+    0000028A 00                       1 	nop
+    0000028B 00                       1 	nop
+    0000028C 00                       1 	nop
+    0000028D 00                       1 	nop
+    0000028E 00                       1 	nop
+    0000028F 00                       1 	nop
+    00000290 00                       1 	nop
+    00000291 00                       1 	nop
+    00000292 00                       1 	nop
+    00000293 00                       1 	nop
+                                    152 	.rept	5
+                                    153 	pop	de
+                                    154 	ld	a, d
+                                    155 	ld	(hl+), a
+                                    156 	ld	a, e
+                                    157 	ld	(hl+), a ;36 per rept
+                                    158 	.endm	;+180
+    00000294 D1                       1 	pop	de
+    00000295 7A                       2 	ld	a, d
+    00000296 22                       3 	ld	(hl+), a
+    00000297 7B                       4 	ld	a, e
+    00000298 22                       5 	ld	(hl+), a ;36 per rept
+    00000299 D1                       1 	pop	de
+    0000029A 7A                       2 	ld	a, d
+    0000029B 22                       3 	ld	(hl+), a
+    0000029C 7B                       4 	ld	a, e
+    0000029D 22                       5 	ld	(hl+), a ;36 per rept
+    0000029E D1                       1 	pop	de
+    0000029F 7A                       2 	ld	a, d
+    000002A0 22                       3 	ld	(hl+), a
+    000002A1 7B                       4 	ld	a, e
+    000002A2 22                       5 	ld	(hl+), a ;36 per rept
+    000002A3 D1                       1 	pop	de
+    000002A4 7A                       2 	ld	a, d
+    000002A5 22                       3 	ld	(hl+), a
+    000002A6 7B                       4 	ld	a, e
+    000002A7 22                       5 	ld	(hl+), a ;36 per rept
+    000002A8 D1                       1 	pop	de
+    000002A9 7A                       2 	ld	a, d
+    000002AA 22                       3 	ld	(hl+), a
+    000002AB 7B                       4 	ld	a, e
+    000002AC 22                       5 	ld	(hl+), a ;36 per rept
+    000002AD 0D                     159 	dec	c
+    000002AE 20 A3                  160 	jr	nz, 1$ ;+12
+    000002B0 3E 01                  161 	ld	a, #1
+    000002B2 EAr2Dr01               162 	ld	(_vblank_happened), a
+    000002B5 AF                     163 	xor	a
+    000002B6 E0 C0                  164 	ldh	(_hblank_transfer_counter), a
+    000002B8 E0 0F                  165 	ldh	(0xFF0F), a
+    000002BA 31r00r00               166 	ld	sp, #_sp_buffer
+    000002BD E1                     167 	pop	hl
+    000002BE F9                     168 	ld	sp, hl
+    000002BF E1                     169 	pop	hl
+    000002C0 D1                     170 	pop	de
+    000002C1 C1                     171 	pop	bc
+    000002C2 F1                     172 	pop	af
+    000002C3 D9                     173 	reti
+                                    174 ;src/gb.c:101: }
+                                    175 ;src/gb.c:102: void lcd_stat_isr() __interrupt __critical __naked {
+                                    176 ;	---------------------------------
+                                    177 ; Function lcd_stat_isr
+                                    178 ; ---------------------------------
+    000002C4                        179 _lcd_stat_isr::
+                                    180 ;src/gb.c:118: __endasm;
+    000002C4 F5                     181 	push	af
+    000002C5 F0 44                  182 	ldh	a, (0xFF44)
+    000002C7 FE 63                  183 	cp	#0x63
+    000002C9 20 04                  184 	jr	nz, 0$
+    000002CB 3E CC                  185 	ld	a, #0xCC
+    000002CD E0 47                  186 	ldh	(0xFF47), a
+    000002CF                        187 	    0$:
+    000002CF F0 44                  188 	ldh a, (0xFF44)
+    000002D1 1F                     189 	rra
+    000002D2 38 05                  190 	jr	c, 1$
+    000002D4 F0 42                  191 	ldh	a, (0xFF42)
+    000002D6 3D                     192 	dec	a
+    000002D7 E0 42                  193 	ldh	(0xFF42), a
+    000002D9                        194 	    1$:
+    000002D9 F1                     195 	pop af
+    000002DA D9                     196 	reti
+                                    197 ;src/gb.c:119: }
+                                    198 ;src/gb.c:120: void timer_isr() __critical __interrupt {;}
+                                    199 ;	---------------------------------
+                                    200 ; Function timer_isr
+                                    201 ; ---------------------------------
+    000002DB                        202 _timer_isr::
+    000002DB F5                     203 	push	af
+    000002DC C5                     204 	push bc
+    000002DD D5                     205 	push de
+    000002DE E5                     206 	push hl
+    000002DF E1                     207 	pop	hl
+    000002E0 D1                     208 	pop de
+    000002E1 C1                     209 	pop bc
+    000002E2 F1                     210 	pop af
+    000002E3 D9                     211 	reti
+                                    212 ;src/gb.c:121: void serial_isr() __interrupt {;}
+                                    213 ;	---------------------------------
+                                    214 ; Function serial_isr
+                                    215 ; ---------------------------------
+    000002E4                        216 _serial_isr::
+    000002E4 FB                     217 	ei
+    000002E5 F5                     218 	push	af
+    000002E6 C5                     219 	push bc
+    000002E7 D5                     220 	push de
+    000002E8 E5                     221 	push hl
+    000002E9 E1                     222 	pop	hl
+    000002EA D1                     223 	pop de
+    000002EB C1                     224 	pop bc
+    000002EC F1                     225 	pop af
+    000002ED C9                     226 	ret
+                                    227 ;src/gb.c:122: void joypad_isr() __interrupt {;}
+                                    228 ;	---------------------------------
+                                    229 ; Function joypad_isr
+                                    230 ; ---------------------------------
+    000002EE                        231 _joypad_isr::
+    000002EE FB                     232 	ei
+    000002EF F5                     233 	push	af
+    000002F0 C5                     234 	push bc
+    000002F1 D5                     235 	push de
+    000002F2 E5                     236 	push hl
+    000002F3 E1                     237 	pop	hl
+    000002F4 D1                     238 	pop de
+    000002F5 C1                     239 	pop bc
+    000002F6 F1                     240 	pop af
+    000002F7 C9                     241 	ret
+                                    242 ;src/gb.c:124: void init_gameboy() __naked {
+                                    243 ;	---------------------------------
+                                    244 ; Function init_gameboy
+                                    245 ; ---------------------------------
+    000002F8                        246 _init_gameboy::
+                                    247 ;src/gb.c:142: __endasm;
+                                    248 	.globl	_main
+    000002F8                        249 	    1$:
+    000002F8 21 00 C0               250 	ld hl, #0xC000 ;clear ((uint8_t*)0xC000) at
+    000002FB 11 00 20               251 	ld	de, #0x2000 ;0xC000 - 0xDFFF
+    000002FE AF                     252 	xor	a
+    000002FF                        253 	    0$:
+    000002FF 22                     254 	ld (hl+), a
+    00000300 1B                     255 	dec	de
+    00000301 BB                     256 	cp	e
+    00000302 20 FB                  257 	jr	nz, 0$
+    00000304 BA                     258 	cp	d
+    00000305 20 F8                  259 	jr	nz, 0$
+    00000307 31 00 E0               260 	ld	sp, #0xE000 ;Stack points to RAM
+    0000030A C3r00r00               261 	jp	_main ;actual start address
+                                    262 ;src/gb.c:143: }
+                                    263 ;src/gb.c:145: void set_bg_map_select(bool _offset){
+                                    264 ;	---------------------------------
+                                    265 ; Function set_bg_map_select
+                                    266 ; ---------------------------------
+    0000030D                        267 _set_bg_map_select::
+                                    268 ;src/gb.c:146: if(_offset) *reg(REG_LCDC) |= LCDC_BG_MAP_SELECT;
+    0000030D 11 40 FF               269 	ld	de, #0xff40
+    00000310 1A                     270 	ld	a,(de)
+    00000311 4F                     271 	ld	c, a
+    00000312 F8 02                  272 	ldhl	sp,#2
+    00000314 CB 46                  273 	bit	0, (hl)
+    00000316 28 09                  274 	jr	Z,00102$
+    00000318 06 00                  275 	ld	b, #0x00
+    0000031A CB D9                  276 	set	3, c
+    0000031C 21 40 FF               277 	ld	hl, #0xff40
+    0000031F 71                     278 	ld	(hl), c
+    00000320 C9                     279 	ret
+    00000321                        280 00102$:
+                                    281 ;src/gb.c:147: else        *reg(REG_LCDC) &= ~LCDC_BG_MAP_SELECT;
+    00000321 CB 99                  282 	res	3, c
+    00000323 21 40 FF               283 	ld	hl, #0xff40
+    00000326 71                     284 	ld	(hl), c
+                                    285 ;src/gb.c:148: }
+    00000327 C9                     286 	ret
+                                    287 ;src/gb.c:149: void set_win_map_select(bool _offset){
+                                    288 ;	---------------------------------
+                                    289 ; Function set_win_map_select
+                                    290 ; ---------------------------------
+    00000328                        291 _set_win_map_select::
+                                    292 ;src/gb.c:150: if(_offset) *reg(REG_LCDC) |= LCDC_WIN_MAP_SELECT;
+    00000328 11 40 FF               293 	ld	de, #0xff40
+    0000032B 1A                     294 	ld	a,(de)
+    0000032C 4F                     295 	ld	c, a
+    0000032D F8 02                  296 	ldhl	sp,#2
+    0000032F CB 46                  297 	bit	0, (hl)
+    00000331 28 09                  298 	jr	Z,00102$
+    00000333 06 00                  299 	ld	b, #0x00
+    00000335 CB F1                  300 	set	6, c
+    00000337 21 40 FF               301 	ld	hl, #0xff40
+    0000033A 71                     302 	ld	(hl), c
+    0000033B C9                     303 	ret
+    0000033C                        304 00102$:
+                                    305 ;src/gb.c:151: else        *reg(REG_LCDC) &= ~LCDC_WIN_MAP_SELECT;
+    0000033C CB B1                  306 	res	6, c
+    0000033E 21 40 FF               307 	ld	hl, #0xff40
+    00000341 71                     308 	ld	(hl), c
+                                    309 ;src/gb.c:152: }
+    00000342 C9                     310 	ret
+                                    311 ;src/gb.c:155: void fastcpy(void* _dst, void* _src, uint16_t _size){
+                                    312 ;	---------------------------------
+                                    313 ; Function fastcpy
+                                    314 ; ---------------------------------
+    00000343                        315 _fastcpy::
+                                    316 ;src/gb.c:189: __endasm;
+                         00000002   317 	dst	= 2
+                         00000004   318 	src	= 4
+                         00000006   319 	size	= 6
+    00000343 F8 06                  320 	ldhl	sp, #size ;bc = _size
+    00000345 2A                     321 	ld	a, (hl+)
+    00000346 46                     322 	ld	b, (hl)
+    00000347 4F                     323 	ld	c, a
+    00000348 AF                     324 	xor	a
+    00000349 B0                     325 	or	b
+    0000034A B1                     326 	or	c
+    0000034B 28 13                  327 	jr	z, 1$
+    0000034D F8 04                  328 	ldhl	sp, #src ;de = _src
+    0000034F 2A                     329 	ld	a, (hl+)
+    00000350 56                     330 	ld	d, (hl)
+    00000351 5F                     331 	ld	e, a
+    00000352 F8 02                  332 	ldhl	sp, #dst ;hl = _dst
+    00000354 2A                     333 	ld	a, (hl+)
+    00000355 66                     334 	ld	h, (hl)
+    00000356 6F                     335 	ld	l, a
+    00000357                        336 	        0$:
+    00000357 1A                     337 	ld a, (de) ;for(;bc > 0; bc--) *(hl++) = *(de++)
+    00000358 22                     338 	ld	(hl+), a
+    00000359 13                     339 	inc	de
+    0000035A 0B                     340 	dec	bc
+    0000035B AF                     341 	xor	a
+    0000035C B0                     342 	or	b
+    0000035D B1                     343 	or	c
+    0000035E 20 F7                  344 	jr	nz, 0$
+    00000360                        345 	        1$:
+                                    346 ;src/gb.c:190: }
+    00000360 C9                     347 	ret
+                                    348 ;src/gb.c:192: void fill(void* _dst, uint8_t _val, uint16_t _size){
+                                    349 ;	---------------------------------
+                                    350 ; Function fill
+                                    351 ; ---------------------------------
+    00000361                        352 _fill::
+                                    353 ;src/gb.c:223: __endasm;
+                         00000002   354 	dst	= 2
+                         00000004   355 	val	= 4
+                         00000005   356 	size	= 5
+    00000361 F8 05                  357 	ldhl	sp, #size ;bc = size
+    00000363 2A                     358 	ld	a, (hl+)
+    00000364 46                     359 	ld	b, (hl)
+    00000365 4F                     360 	ld	c, a
+    00000366 AF                     361 	xor	a
+    00000367 B0                     362 	or	b
+    00000368 B1                     363 	or	c
+    00000369 28 10                  364 	jr	z, 1$
+    0000036B F8 04                  365 	ldhl	sp, #val ;e = val
+    0000036D 5E                     366 	ld	e, (hl)
+    0000036E F8 02                  367 	ldhl	sp, #dst ;hl = dst
+    00000370 2A                     368 	ld	a, (hl+)
+    00000371 66                     369 	ld	h, (hl)
+    00000372 6F                     370 	ld	l, a
+    00000373                        371 	        0$:
+    00000373 7B                     372 	ld a, e ;for() *(hl++) = e
+    00000374 22                     373 	ld	(hl+), a
+    00000375 0B                     374 	dec	bc
+    00000376 AF                     375 	xor	a
+    00000377 B0                     376 	or	b
+    00000378 B1                     377 	or	c
+    00000379 20 F8                  378 	jr	nz, 0$
+    0000037B                        379 	        1$:
+                                    380 ;src/gb.c:224: }
+    0000037B C9                     381 	ret
+                                    382 ;src/gb.c:226: void set_bg_chr(uint8_t* _data, uint16_t _addr, uint16_t _size){
+                                    383 ;	---------------------------------
+                                    384 ; Function set_bg_chr
+                                    385 ; ---------------------------------
+    0000037C                        386 _set_bg_chr::
+    0000037C E8 FE                  387 	add	sp, #-2
+                                    388 ;src/gb.c:227: fastcpy(BG_CHR + _addr, _data, _size);
+    0000037E F8 04                  389 	ldhl	sp,#4
+    00000380 2A                     390 	ld	a, (hl+)
+    00000381 5E                     391 	ld	e, (hl)
+    00000382 F8 00                  392 	ldhl	sp,#0
+    00000384 22                     393 	ld	(hl+), a
+    00000385 73                     394 	ld	(hl), e
+    00000386 F8 06                  395 	ldhl	sp,#(7 - 1)
+    00000388 5E                     396 	ld	e, (hl)
+    00000389 23                     397 	inc	hl
+    0000038A 56                     398 	ld	d, (hl)
+    0000038B 21 00 80               399 	ld	hl, #0x8000
+    0000038E 19                     400 	add	hl, de
+    0000038F 4D                     401 	ld	c, l
+    00000390 44                     402 	ld	b, h
+    00000391 F8 08                  403 	ldhl	sp,#8
+    00000393 2A                     404 	ld	a, (hl+)
+    00000394 66                     405 	ld	h, (hl)
+    00000395 6F                     406 	ld	l, a
+    00000396 E5                     407 	push	hl
+    00000397 F8 02                  408 	ldhl	sp,#2
+    00000399 2A                     409 	ld	a, (hl+)
+    0000039A 66                     410 	ld	h, (hl)
+    0000039B 6F                     411 	ld	l, a
+    0000039C E5                     412 	push	hl
+    0000039D C5                     413 	push	bc
+    0000039E CDr43r03               414 	call	_fastcpy
+    000003A1 E8 06                  415 	add	sp, #6
+                                    416 ;src/gb.c:228: }
+    000003A3 E8 02                  417 	add	sp, #2
+    000003A5 C9                     418 	ret
+                                    419 ;src/gb.c:230: void set_bg_map(uint8_t* _data, uint16_t _addr, uint16_t _size){
+                                    420 ;	---------------------------------
+                                    421 ; Function set_bg_map
+                                    422 ; ---------------------------------
+    000003A6                        423 _set_bg_map::
+    000003A6 E8 FE                  424 	add	sp, #-2
+                                    425 ;src/gb.c:231: fastcpy(BG_MAP + _addr, _data, _size);
+    000003A8 F8 04                  426 	ldhl	sp,#4
+    000003AA 2A                     427 	ld	a, (hl+)
+    000003AB 5E                     428 	ld	e, (hl)
+    000003AC F8 00                  429 	ldhl	sp,#0
+    000003AE 22                     430 	ld	(hl+), a
+    000003AF 73                     431 	ld	(hl), e
+    000003B0 F8 06                  432 	ldhl	sp,#(7 - 1)
+    000003B2 5E                     433 	ld	e, (hl)
+    000003B3 23                     434 	inc	hl
+    000003B4 56                     435 	ld	d, (hl)
+    000003B5 21 00 98               436 	ld	hl, #0x9800
+    000003B8 19                     437 	add	hl, de
+    000003B9 4D                     438 	ld	c, l
+    000003BA 44                     439 	ld	b, h
+    000003BB F8 08                  440 	ldhl	sp,#8
+    000003BD 2A                     441 	ld	a, (hl+)
+    000003BE 66                     442 	ld	h, (hl)
+    000003BF 6F                     443 	ld	l, a
+    000003C0 E5                     444 	push	hl
+    000003C1 F8 02                  445 	ldhl	sp,#2
+    000003C3 2A                     446 	ld	a, (hl+)
+    000003C4 66                     447 	ld	h, (hl)
+    000003C5 6F                     448 	ld	l, a
+    000003C6 E5                     449 	push	hl
+    000003C7 C5                     450 	push	bc
+    000003C8 CDr43r03               451 	call	_fastcpy
+    000003CB E8 06                  452 	add	sp, #6
+                                    453 ;src/gb.c:232: }
+    000003CD E8 02                  454 	add	sp, #2
+    000003CF C9                     455 	ret
+                                    456 ;src/gb.c:234: void set_bg_map_tile(uint16_t _addr, uint8_t _tile){
+                                    457 ;	---------------------------------
+                                    458 ; Function set_bg_map_tile
+                                    459 ; ---------------------------------
+    000003D0                        460 _set_bg_map_tile::
+                                    461 ;src/gb.c:235: *reg(BG_MAP + _addr) = _tile;
+    000003D0 F8 02                  462 	ldhl	sp,#(3 - 1)
+    000003D2 5E                     463 	ld	e, (hl)
+    000003D3 23                     464 	inc	hl
+    000003D4 56                     465 	ld	d, (hl)
+    000003D5 21 00 98               466 	ld	hl, #0x9800
+    000003D8 19                     467 	add	hl, de
+    000003D9 4D                     468 	ld	c, l
+    000003DA 44                     469 	ld	b, h
+    000003DB F8 04                  470 	ldhl	sp,#4
+    000003DD 7E                     471 	ld	a, (hl)
+    000003DE 02                     472 	ld	(bc), a
+                                    473 ;src/gb.c:236: }
+    000003DF C9                     474 	ret
+                                    475 ;src/gb.c:238: void update_bg_map_tile(uint16_t _addr, uint8_t _tile){
+                                    476 ;	---------------------------------
+                                    477 ; Function update_bg_map_tile
+                                    478 ; ---------------------------------
+    000003E0                        479 _update_bg_map_tile::
+    000003E0 E8 FE                  480 	add	sp, #-2
+                                    481 ;src/gb.c:239: vram_transfer_buffer[(vram_transfer_size << 2) + 0] = (BG_MAP_ADDR + _addr) & 0xFF;
+    000003E2 21rA0r00               482 	ld	hl, #_vram_transfer_size
+    000003E5 4E                     483 	ld	c, (hl)
+    000003E6 06 00                  484 	ld	b, #0x00
+    000003E8 CB 21                  485 	sla	c
+    000003EA CB 10                  486 	rl	b
+    000003EC CB 21                  487 	sla	c
+    000003EE CB 10                  488 	rl	b
+    000003F0 21rA1r00               489 	ld	hl, #_vram_transfer_buffer
+    000003F3 09                     490 	add	hl, bc
+    000003F4 4D                     491 	ld	c, l
+    000003F5 44                     492 	ld	b, h
+    000003F6 F8 04                  493 	ldhl	sp,#4
+    000003F8 7E                     494 	ld	a, (hl)
+    000003F9 02                     495 	ld	(bc), a
+                                    496 ;src/gb.c:240: vram_transfer_buffer[(vram_transfer_size << 2) + 1] = ((BG_MAP_ADDR + _addr) >> 8) & 0xFF;
+    000003FA 21rA0r00               497 	ld	hl, #_vram_transfer_size
+    000003FD 4E                     498 	ld	c, (hl)
+    000003FE 06 00                  499 	ld	b, #0x00
+    00000400 CB 21                  500 	sla	c
+    00000402 CB 10                  501 	rl	b
+    00000404 CB 21                  502 	sla	c
+    00000406 CB 10                  503 	rl	b
+    00000408 03                     504 	inc	bc
+    00000409 21rA1r00               505 	ld	hl, #_vram_transfer_buffer
+    0000040C 09                     506 	add	hl, bc
+    0000040D 4D                     507 	ld	c, l
+    0000040E 44                     508 	ld	b, h
+    0000040F F8 04                  509 	ldhl	sp,#(5 - 1)
+    00000411 5E                     510 	ld	e, (hl)
+    00000412 23                     511 	inc	hl
+    00000413 56                     512 	ld	d, (hl)
+    00000414 21 00 98               513 	ld	hl, #0x9800
+    00000417 19                     514 	add	hl, de
+    00000418 33                     515 	inc	sp
+    00000419 33                     516 	inc	sp
+    0000041A E5                     517 	push	hl
+    0000041B F8 01                  518 	ldhl	sp,#1
+    0000041D 5E                     519 	ld	e, (hl)
+    0000041E 16 00                  520 	ld	d, #0x00
+    00000420 7B                     521 	ld	a, e
+    00000421 02                     522 	ld	(bc), a
+                                    523 ;src/gb.c:241: vram_transfer_buffer[(vram_transfer_size << 2) + 2] = 0x00;
+    00000422 21rA0r00               524 	ld	hl, #_vram_transfer_size
+    00000425 4E                     525 	ld	c, (hl)
+    00000426 06 00                  526 	ld	b, #0x00
+    00000428 CB 21                  527 	sla	c
+    0000042A CB 10                  528 	rl	b
+    0000042C CB 21                  529 	sla	c
+    0000042E CB 10                  530 	rl	b
+    00000430 03                     531 	inc	bc
+    00000431 03                     532 	inc	bc
+    00000432 21rA1r00               533 	ld	hl, #_vram_transfer_buffer
+    00000435 09                     534 	add	hl, bc
+    00000436 4D                     535 	ld	c, l
+    00000437 44                     536 	ld	b, h
+    00000438 AF                     537 	xor	a, a
+    00000439 02                     538 	ld	(bc), a
+                                    539 ;src/gb.c:242: vram_transfer_buffer[(vram_transfer_size << 2) + 3] = _tile;
+    0000043A 21rA0r00               540 	ld	hl, #_vram_transfer_size
+    0000043D 4E                     541 	ld	c, (hl)
+    0000043E 06 00                  542 	ld	b, #0x00
+    00000440 CB 21                  543 	sla	c
+    00000442 CB 10                  544 	rl	b
+    00000444 CB 21                  545 	sla	c
+    00000446 CB 10                  546 	rl	b
+    00000448 03                     547 	inc	bc
+    00000449 03                     548 	inc	bc
+    0000044A 03                     549 	inc	bc
+    0000044B 21rA1r00               550 	ld	hl, #_vram_transfer_buffer
+    0000044E 09                     551 	add	hl, bc
+    0000044F 4D                     552 	ld	c, l
+    00000450 44                     553 	ld	b, h
+    00000451 F8 06                  554 	ldhl	sp,#6
+    00000453 7E                     555 	ld	a, (hl)
+    00000454 02                     556 	ld	(bc), a
+                                    557 ;src/gb.c:243: vram_transfer_size++;
+    00000455 21rA0r00               558 	ld	hl, #_vram_transfer_size
+    00000458 34                     559 	inc	(hl)
+                                    560 ;src/gb.c:244: }
+    00000459 E8 02                  561 	add	sp, #2
+    0000045B C9                     562 	ret
+                                    563 ;src/gb.c:246: void set_win_map(uint8_t* _data, uint16_t _addr, uint16_t _size){
+                                    564 ;	---------------------------------
+                                    565 ; Function set_win_map
+                                    566 ; ---------------------------------
+    0000045C                        567 _set_win_map::
+    0000045C E8 FE                  568 	add	sp, #-2
+                                    569 ;src/gb.c:247: fastcpy(WIN_MAP + _addr, _data, _size);
+    0000045E F8 04                  570 	ldhl	sp,#4
+    00000460 2A                     571 	ld	a, (hl+)
+    00000461 5E                     572 	ld	e, (hl)
+    00000462 F8 00                  573 	ldhl	sp,#0
+    00000464 22                     574 	ld	(hl+), a
+    00000465 73                     575 	ld	(hl), e
+    00000466 F8 06                  576 	ldhl	sp,#(7 - 1)
+    00000468 5E                     577 	ld	e, (hl)
+    00000469 23                     578 	inc	hl
+    0000046A 56                     579 	ld	d, (hl)
+    0000046B 21 00 9C               580 	ld	hl, #0x9c00
+    0000046E 19                     581 	add	hl, de
+    0000046F 4D                     582 	ld	c, l
+    00000470 44                     583 	ld	b, h
+    00000471 F8 08                  584 	ldhl	sp,#8
+    00000473 2A                     585 	ld	a, (hl+)
+    00000474 66                     586 	ld	h, (hl)
+    00000475 6F                     587 	ld	l, a
+    00000476 E5                     588 	push	hl
+    00000477 F8 02                  589 	ldhl	sp,#2
+    00000479 2A                     590 	ld	a, (hl+)
+    0000047A 66                     591 	ld	h, (hl)
+    0000047B 6F                     592 	ld	l, a
+    0000047C E5                     593 	push	hl
+    0000047D C5                     594 	push	bc
+    0000047E CDr43r03               595 	call	_fastcpy
+    00000481 E8 06                  596 	add	sp, #6
+                                    597 ;src/gb.c:248: }
+    00000483 E8 02                  598 	add	sp, #2
+    00000485 C9                     599 	ret
+                                    600 ;src/gb.c:250: void set_win_map_tile(uint16_t _addr, uint8_t _tile){
+                                    601 ;	---------------------------------
+                                    602 ; Function set_win_map_tile
+                                    603 ; ---------------------------------
+    00000486                        604 _set_win_map_tile::
+                                    605 ;src/gb.c:251: *reg(WIN_MAP + _addr) = _tile;
+    00000486 F8 02                  606 	ldhl	sp,#(3 - 1)
+    00000488 5E                     607 	ld	e, (hl)
+    00000489 23                     608 	inc	hl
+    0000048A 56                     609 	ld	d, (hl)
+    0000048B 21 00 9C               610 	ld	hl, #0x9c00
+    0000048E 19                     611 	add	hl, de
+    0000048F 4D                     612 	ld	c, l
+    00000490 44                     613 	ld	b, h
+    00000491 F8 04                  614 	ldhl	sp,#4
+    00000493 7E                     615 	ld	a, (hl)
+    00000494 02                     616 	ld	(bc), a
+                                    617 ;src/gb.c:252: }
+    00000495 C9                     618 	ret
+                                    619 ;src/gb.c:254: void update_win_map_tile(uint16_t _addr, uint8_t _tile){
+                                    620 ;	---------------------------------
+                                    621 ; Function update_win_map_tile
+                                    622 ; ---------------------------------
+    00000496                        623 _update_win_map_tile::
+    00000496 E8 FE                  624 	add	sp, #-2
+                                    625 ;src/gb.c:255: vram_transfer_buffer[(vram_transfer_size << 2) + 0] = (WIN_MAP_ADDR + _addr) & 0xFF;
+    00000498 21rA0r00               626 	ld	hl, #_vram_transfer_size
+    0000049B 4E                     627 	ld	c, (hl)
+    0000049C 06 00                  628 	ld	b, #0x00
+    0000049E CB 21                  629 	sla	c
+    000004A0 CB 10                  630 	rl	b
+    000004A2 CB 21                  631 	sla	c
+    000004A4 CB 10                  632 	rl	b
+    000004A6 21rA1r00               633 	ld	hl, #_vram_transfer_buffer
+    000004A9 09                     634 	add	hl, bc
+    000004AA 4D                     635 	ld	c, l
+    000004AB 44                     636 	ld	b, h
+    000004AC F8 04                  637 	ldhl	sp,#4
+    000004AE 7E                     638 	ld	a, (hl)
+    000004AF 02                     639 	ld	(bc), a
+                                    640 ;src/gb.c:256: vram_transfer_buffer[(vram_transfer_size << 2) + 1] = ((WIN_MAP_ADDR + _addr) >> 8) & 0xFF;
+    000004B0 21rA0r00               641 	ld	hl, #_vram_transfer_size
+    000004B3 4E                     642 	ld	c, (hl)
+    000004B4 06 00                  643 	ld	b, #0x00
+    000004B6 CB 21                  644 	sla	c
+    000004B8 CB 10                  645 	rl	b
+    000004BA CB 21                  646 	sla	c
+    000004BC CB 10                  647 	rl	b
+    000004BE 03                     648 	inc	bc
+    000004BF 21rA1r00               649 	ld	hl, #_vram_transfer_buffer
+    000004C2 09                     650 	add	hl, bc
+    000004C3 4D                     651 	ld	c, l
+    000004C4 44                     652 	ld	b, h
+    000004C5 F8 04                  653 	ldhl	sp,#(5 - 1)
+    000004C7 5E                     654 	ld	e, (hl)
+    000004C8 23                     655 	inc	hl
+    000004C9 56                     656 	ld	d, (hl)
+    000004CA 21 00 9C               657 	ld	hl, #0x9c00
+    000004CD 19                     658 	add	hl, de
+    000004CE 33                     659 	inc	sp
+    000004CF 33                     660 	inc	sp
+    000004D0 E5                     661 	push	hl
+    000004D1 F8 01                  662 	ldhl	sp,#1
+    000004D3 5E                     663 	ld	e, (hl)
+    000004D4 16 00                  664 	ld	d, #0x00
+    000004D6 7B                     665 	ld	a, e
+    000004D7 02                     666 	ld	(bc), a
+                                    667 ;src/gb.c:257: vram_transfer_buffer[(vram_transfer_size << 2) + 2] = 0x00;
+    000004D8 21rA0r00               668 	ld	hl, #_vram_transfer_size
+    000004DB 4E                     669 	ld	c, (hl)
+    000004DC 06 00                  670 	ld	b, #0x00
+    000004DE CB 21                  671 	sla	c
+    000004E0 CB 10                  672 	rl	b
+    000004E2 CB 21                  673 	sla	c
+    000004E4 CB 10                  674 	rl	b
+    000004E6 03                     675 	inc	bc
+    000004E7 03                     676 	inc	bc
+    000004E8 21rA1r00               677 	ld	hl, #_vram_transfer_buffer
+    000004EB 09                     678 	add	hl, bc
+    000004EC 4D                     679 	ld	c, l
+    000004ED 44                     680 	ld	b, h
+    000004EE AF                     681 	xor	a, a
+    000004EF 02                     682 	ld	(bc), a
+                                    683 ;src/gb.c:258: vram_transfer_buffer[(vram_transfer_size << 2) + 3] = _tile;
+    000004F0 21rA0r00               684 	ld	hl, #_vram_transfer_size
+    000004F3 4E                     685 	ld	c, (hl)
+    000004F4 06 00                  686 	ld	b, #0x00
+    000004F6 CB 21                  687 	sla	c
+    000004F8 CB 10                  688 	rl	b
+    000004FA CB 21                  689 	sla	c
+    000004FC CB 10                  690 	rl	b
+    000004FE 03                     691 	inc	bc
+    000004FF 03                     692 	inc	bc
+    00000500 03                     693 	inc	bc
+    00000501 21rA1r00               694 	ld	hl, #_vram_transfer_buffer
+    00000504 09                     695 	add	hl, bc
+    00000505 4D                     696 	ld	c, l
+    00000506 44                     697 	ld	b, h
+    00000507 F8 06                  698 	ldhl	sp,#6
+    00000509 7E                     699 	ld	a, (hl)
+    0000050A 02                     700 	ld	(bc), a
+                                    701 ;src/gb.c:259: vram_transfer_size++;
+    0000050B 21rA0r00               702 	ld	hl, #_vram_transfer_size
+    0000050E 34                     703 	inc	(hl)
+                                    704 ;src/gb.c:260: }
+    0000050F E8 02                  705 	add	sp, #2
+    00000511 C9                     706 	ret
+                                    707 ;src/gb.c:262: void set_obj_chr(uint8_t* _data, uint16_t _addr, uint16_t _size){
+                                    708 ;	---------------------------------
+                                    709 ; Function set_obj_chr
+                                    710 ; ---------------------------------
+    00000512                        711 _set_obj_chr::
+    00000512 E8 FE                  712 	add	sp, #-2
+                                    713 ;src/gb.c:263: fastcpy(OBJ_CHR + _addr, _data, _size);
+    00000514 F8 04                  714 	ldhl	sp,#4
+    00000516 2A                     715 	ld	a, (hl+)
+    00000517 5E                     716 	ld	e, (hl)
+    00000518 F8 00                  717 	ldhl	sp,#0
+    0000051A 22                     718 	ld	(hl+), a
+    0000051B 73                     719 	ld	(hl), e
+    0000051C F8 06                  720 	ldhl	sp,#(7 - 1)
+    0000051E 5E                     721 	ld	e, (hl)
+    0000051F 23                     722 	inc	hl
+    00000520 56                     723 	ld	d, (hl)
+    00000521 21 00 80               724 	ld	hl, #0x8000
+    00000524 19                     725 	add	hl, de
+    00000525 4D                     726 	ld	c, l
+    00000526 44                     727 	ld	b, h
+    00000527 F8 08                  728 	ldhl	sp,#8
+    00000529 2A                     729 	ld	a, (hl+)
+    0000052A 66                     730 	ld	h, (hl)
+    0000052B 6F                     731 	ld	l, a
+    0000052C E5                     732 	push	hl
+    0000052D F8 02                  733 	ldhl	sp,#2
+    0000052F 2A                     734 	ld	a, (hl+)
+    00000530 66                     735 	ld	h, (hl)
+    00000531 6F                     736 	ld	l, a
+    00000532 E5                     737 	push	hl
+    00000533 C5                     738 	push	bc
+    00000534 CDr43r03               739 	call	_fastcpy
+    00000537 E8 06                  740 	add	sp, #6
+                                    741 ;src/gb.c:264: }
+    00000539 E8 02                  742 	add	sp, #2
+    0000053B C9                     743 	ret
+                                    744 ;src/gb.c:266: void set_obj(obj_t* _obj, uint8_t _x, uint8_t _y, uint8_t _tile, uint8_t _attr){
+                                    745 ;	---------------------------------
+                                    746 ; Function set_obj
+                                    747 ; ---------------------------------
+    0000053C                        748 _set_obj::
+    0000053C E8 FE                  749 	add	sp, #-2
+                                    750 ;src/gb.c:267: _obj->x     = _x;
+    0000053E F8 04                  751 	ldhl	sp,#4
+    00000540 2A                     752 	ld	a, (hl+)
+    00000541 5E                     753 	ld	e, (hl)
+    00000542 F8 00                  754 	ldhl	sp,#0
+    00000544 22                     755 	ld	(hl+), a
+    00000545 73                     756 	ld	(hl), e
+    00000546 C1                     757 	pop	bc
+    00000547 C5                     758 	push	bc
+    00000548 03                     759 	inc	bc
+    00000549 F8 06                  760 	ldhl	sp,#6
+    0000054B 7E                     761 	ld	a, (hl)
+    0000054C 02                     762 	ld	(bc), a
+                                    763 ;src/gb.c:268: _obj->y     = _y;
+    0000054D D1                     764 	pop	de
+    0000054E D5                     765 	push	de
+    0000054F 23                     766 	inc	hl
+    00000550 7E                     767 	ld	a, (hl)
+    00000551 12                     768 	ld	(de), a
+                                    769 ;src/gb.c:269: _obj->tile  = _tile;
+    00000552 C1                     770 	pop	bc
+    00000553 C5                     771 	push	bc
+    00000554 03                     772 	inc	bc
+    00000555 03                     773 	inc	bc
+    00000556 23                     774 	inc	hl
+    00000557 7E                     775 	ld	a, (hl)
+    00000558 02                     776 	ld	(bc), a
+                                    777 ;src/gb.c:270: _obj->attr  = _attr;
+    00000559 C1                     778 	pop	bc
+    0000055A C5                     779 	push	bc
+    0000055B 03                     780 	inc	bc
+    0000055C 03                     781 	inc	bc
+    0000055D 03                     782 	inc	bc
+    0000055E 23                     783 	inc	hl
+    0000055F 7E                     784 	ld	a, (hl)
+    00000560 02                     785 	ld	(bc), a
+                                    786 ;src/gb.c:271: }
+    00000561 E8 02                  787 	add	sp, #2
+    00000563 C9                     788 	ret
+                                    789 ;src/gb.c:273: uint8_t copy_to_oam_obj(obj_t* _obj, uint8_t _slot){
+                                    790 ;	---------------------------------
+                                    791 ; Function copy_to_oam_obj
+                                    792 ; ---------------------------------
+    00000564                        793 _copy_to_oam_obj::
+                                    794 ;src/gb.c:309: __endasm;
+                         00000002   795 	obj	= 2
+                         00000004   796 	slot	= 4
+    00000564 F8 02                  797 	ldhl	sp, #obj
+    00000566 2A                     798 	ld	a, (hl+)
+    00000567 56                     799 	ld	d, (hl)
+    00000568 5F                     800 	ld	e, a
+    00000569 F8 04                  801 	ldhl	sp, #slot
+    0000056B 6E                     802 	ld	l, (hl)
+    0000056C 26 00                  803 	ld	h, #0
+    0000056E 29                     804 	add	hl, hl
+    0000056F 29                     805 	add	hl, hl
+    00000570 01r00r00               806 	ld	bc, #_obj
+    00000573 09                     807 	add	hl, bc
+    00000574 1A                     808 	ld	a, (de) ;copy Y
+    00000575 13                     809 	inc	de
+    00000576 C6 10                  810 	add	#16
+    00000578 22                     811 	ld	(hl+), a
+    00000579 1A                     812 	ld	a, (de) ;copy X
+    0000057A 13                     813 	inc	de
+    0000057B C6 08                  814 	add	#8
+    0000057D 22                     815 	ld	(hl+), a
+    0000057E 1A                     816 	ld	a, (de) ;copy Tile
+    0000057F 13                     817 	inc	de
+    00000580 22                     818 	ld	(hl+), a
+    00000581 1A                     819 	ld	a, (de) ;copy Attr
+    00000582 77                     820 	ld	(hl), a
+    00000583 F8 04                  821 	ldhl	sp, #slot
+    00000585 5E                     822 	ld	e, (hl)
+    00000586 1C                     823 	inc	e
+                                    824 ;src/gb.c:310: }
+    00000587 C9                     825 	ret
+                                    826 ;src/gb.c:312: void read_joypad(){
+                                    827 ;	---------------------------------
+                                    828 ; Function read_joypad
+                                    829 ; ---------------------------------
+    00000588                        830 _read_joypad::
+                                    831 ;src/gb.c:339: __endasm;
+    00000588 21 00 FF               832 	ld	hl, #0xFF00
+    0000058B FAr27r01               833 	ld	a, (_joy0)
+    0000058E EAr28r01               834 	ld	(_old_joy0), a
+    00000591 36 20                  835 	ld	(hl), #0x20
+    00000593 4E                     836 	ld	c, (hl)
+    00000594 4E                     837 	ld	c, (hl)
+    00000595 4E                     838 	ld	c, (hl)
+    00000596 7E                     839 	ld	a, (hl)
+    00000597 CB 37                  840 	swap	a
+    00000599 E6 F0                  841 	and	#0xF0
+    0000059B 47                     842 	ld	b, a
+    0000059C 36 10                  843 	ld	(hl), #0x10
+    0000059E 4E                     844 	ld	c, (hl)
+    0000059F 4E                     845 	ld	c, (hl)
+    000005A0 4E                     846 	ld	c, (hl)
+    000005A1 7E                     847 	ld	a, (hl)
+    000005A2 E6 0F                  848 	and	#0x0F
+    000005A4 B0                     849 	or	b
+    000005A5 36 30                  850 	ld	(hl), #0x30
+    000005A7 2F                     851 	cpl
+    000005A8 EAr27r01               852 	ld	(_joy0), a
+                                    853 ;src/gb.c:340: }
+    000005AB C9                     854 	ret
+                                    855 ;src/gb.c:341: bool key_push(uint8_t _key){return (!(old_joy0 & _key) && (joy0 & _key));}
+                                    856 ;	---------------------------------
+                                    857 ; Function key_push
+                                    858 ; ---------------------------------
+    000005AC                        859 _key_push::
+    000005AC 21r28r01               860 	ld	hl, #_old_joy0
+    000005AF 7E                     861 	ld	a, (hl)
+    000005B0 F8 02                  862 	ldhl	sp,#2
+    000005B2 A6                     863 	and	a,(hl)
+    000005B3 20 09                  864 	jr	NZ,00103$
+    000005B5 21r27r01               865 	ld	hl, #_joy0
+    000005B8 7E                     866 	ld	a, (hl)
+    000005B9 F8 02                  867 	ldhl	sp,#2
+    000005BB A6                     868 	and	a,(hl)
+    000005BC 20 03                  869 	jr	NZ,00104$
+    000005BE                        870 00103$:
+    000005BE AF                     871 	xor	a, a
+    000005BF 18 02                  872 	jr	00105$
+    000005C1                        873 00104$:
+    000005C1 3E 01                  874 	ld	a, #0x01
+    000005C3                        875 00105$:
+    000005C3 5F                     876 	ld	e, a
+    000005C4 C9                     877 	ret
+                                    878 ;src/gb.c:342: bool key_hold(uint8_t _key){return (joy0 & _key);}
+                                    879 ;	---------------------------------
+                                    880 ; Function key_hold
+                                    881 ; ---------------------------------
+    000005C5                        882 _key_hold::
+    000005C5 21r27r01               883 	ld	hl, #_joy0
+    000005C8 7E                     884 	ld	a, (hl)
+    000005C9 F8 02                  885 	ldhl	sp,#2
+    000005CB A6                     886 	and	a, (hl)
+    000005CC 4F                     887 	ld	c, a
+    000005CD AF                     888 	xor	a, a
+    000005CE B9                     889 	cp	a, c
+    000005CF 17                     890 	rla
+    000005D0 5F                     891 	ld	e, a
+    000005D1 C9                     892 	ret
+                                    893 ;src/gb.c:343: bool key_release(uint8_t _key){return ((old_joy0 & _key) && !(joy0 & _key));}
+                                    894 ;	---------------------------------
+                                    895 ; Function key_release
+                                    896 ; ---------------------------------
+    000005D2                        897 _key_release::
+    000005D2 21r28r01               898 	ld	hl, #_old_joy0
+    000005D5 7E                     899 	ld	a, (hl)
+    000005D6 F8 02                  900 	ldhl	sp,#2
+    000005D8 A6                     901 	and	a,(hl)
+    000005D9 28 09                  902 	jr	Z,00103$
+    000005DB 21r27r01               903 	ld	hl, #_joy0
+    000005DE 7E                     904 	ld	a, (hl)
+    000005DF F8 02                  905 	ldhl	sp,#2
+    000005E1 A6                     906 	and	a,(hl)
+    000005E2 28 03                  907 	jr	Z,00104$
+    000005E4                        908 00103$:
+    000005E4 AF                     909 	xor	a, a
+    000005E5 18 02                  910 	jr	00105$
+    000005E7                        911 00104$:
+    000005E7 3E 01                  912 	ld	a, #0x01
+    000005E9                        913 00105$:
+    000005E9 5F                     914 	ld	e, a
+    000005EA C9                     915 	ret
+                                    916 	.area _CODE
+                                    917 	.area _CABS (ABS)

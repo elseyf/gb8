@@ -1,0 +1,2308 @@
+                                      1 ;--------------------------------------------------------
+                                      2 ; File Created by SDCC : free open source ANSI-C Compiler
+                                      3 ; Version 3.7.1 #10455 (MINGW64)
+                                      4 ;--------------------------------------------------------
+                                      5 	.module main
+                                      6 	.optsdcc -mgbz80
+                                      7 	
+                                      8 ;--------------------------------------------------------
+                                      9 ; Public variables in this module
+                                     10 ;--------------------------------------------------------
+                                     11 	.globl _main
+                                     12 	.globl _key_hold
+                                     13 	.globl _read_joypad
+                                     14 	.globl _set_bg_map_tile
+                                     15 	.globl _set_bg_chr
+                                     16 	.globl _fill
+                                     17 	.globl _fastcpy
+                                     18 	.globl _set_bg_map_select
+                                     19 	.globl _gb8_display
+                                     20 	.globl _gb8_mem
+                                     21 	.globl _gb8_sound_timer
+                                     22 	.globl _gb8_delay_timer
+                                     23 	.globl _gb8_i
+                                     24 	.globl _gb8_seed
+                                     25 	.globl _gb8_v
+                                     26 	.globl _gb8_stack_p
+                                     27 	.globl _gb8_stack
+                                     28 	.globl _gb8_pc
+                                     29 	.globl _sp_buffer
+                                     30 	.globl _gb8_font
+                                     31 	.globl _gb8_key_map
+                                     32 	.globl _gb8_clear_screen
+                                     33 	.globl _gb8_get_key
+                                     34 	.globl _gb8_draw_sprite
+                                     35 	.globl _gb8_bcd_vx
+                                     36 	.globl _gb8_rnd
+                                     37 	.globl _gb8_step
+                                     38 ;--------------------------------------------------------
+                                     39 ; special function registers
+                                     40 ;--------------------------------------------------------
+                                     41 ;--------------------------------------------------------
+                                     42 ; ram data
+                                     43 ;--------------------------------------------------------
+                                     44 	.area _DATA
+    00000000                         45 _sp_buffer::
+    00000000                         46 	.ds 2
+    00000002                         47 _gb8_pc::
+    00000002                         48 	.ds 2
+    00000004                         49 _gb8_stack::
+    00000004                         50 	.ds 64
+    00000044                         51 _gb8_stack_p::
+    00000044                         52 	.ds 1
+    00000045                         53 _gb8_v::
+    00000045                         54 	.ds 16
+    00000055                         55 _gb8_seed::
+    00000055                         56 	.ds 1
+    00000056                         57 _gb8_i::
+    00000056                         58 	.ds 2
+    00000058                         59 _gb8_delay_timer::
+    00000058                         60 	.ds 1
+    00000059                         61 _gb8_sound_timer::
+    00000059                         62 	.ds 1
+    0000005A                         63 _gb8_mem::
+    0000005A                         64 	.ds 4096
+                         0000D800    65 _gb8_display	=	0xd800
+                                     66 ;--------------------------------------------------------
+                                     67 ; absolute external ram data
+                                     68 ;--------------------------------------------------------
+                                     69 	.area _DABS (ABS)
+                                     70 ;--------------------------------------------------------
+                                     71 ; global & static initialisations
+                                     72 ;--------------------------------------------------------
+                                     73 	.area _HOME
+                                     74 	.area _GSINIT
+                                     75 	.area _GSFINAL
+                                     76 	.area _GSINIT
+                                     77 ;--------------------------------------------------------
+                                     78 ; Home
+                                     79 ;--------------------------------------------------------
+                                     80 	.area _HOME
+                                     81 	.area _HOME
+                                     82 ;--------------------------------------------------------
+                                     83 ; code
+                                     84 ;--------------------------------------------------------
+                                     85 	.area _CODE
+                                     86 ;src/main.c:143: void main(){
+                                     87 ;	---------------------------------
+                                     88 ; Function main
+                                     89 ; ---------------------------------
+    00000000                         90 _main::
+    00000000 E8 FA                   91 	add	sp, #-6
+                                     92 ;src/gb.h:141: inline bool display_state(){return (*reg(REG_LCDC) & LCDC_DISPLAY_ENABLE);}
+    00000002 11 40 FF                93 	ld	de, #0xff40
+    00000005 1A                      94 	ld	a,(de)
+    00000006 4F                      95 	ld	c,a
+    00000007 CB 07                   96 	rlc	a
+    00000009 E6 01                   97 	and	a, #0x01
+                                     98 ;src/gb.h:144: if(display_state()){
+    0000000B CB 47                   99 	bit	0, a
+    0000000D 28 1C                  100 	jr	Z,00121$
+                                    101 ;src/gb.h:145: while((*reg(REG_LCD_STAT) & LCD_STAT_MODE_FLAG) != 1); *reg(REG_LCDC) &= ~LCDC_DISPLAY_ENABLE;
+    0000000F                        102 00116$:
+    0000000F 11 41 FF               103 	ld	de, #0xff41
+    00000012 1A                     104 	ld	a,(de)
+    00000013 4F                     105 	ld	c, a
+    00000014 06 00                  106 	ld	b, #0x00
+    00000016 79                     107 	ld	a, c
+    00000017 E6 03                  108 	and	a, #0x03
+    00000019 4F                     109 	ld	c, a
+    0000001A 06 00                  110 	ld	b, #0x00
+    0000001C 79                     111 	ld	a, c
+    0000001D 3D                     112 	dec	a
+    0000001E B0                     113 	or	a, b
+    0000001F 20 EE                  114 	jr	NZ,00116$
+    00000021 11 40 FF               115 	ld	de, #0xff40
+    00000024 1A                     116 	ld	a,(de)
+    00000025 CB BF                  117 	res	7, a
+    00000027 21 40 FF               118 	ld	hl, #0xff40
+    0000002A 77                     119 	ld	(hl), a
+                                    120 ;src/main.c:144: disable_display();
+    0000002B                        121 00121$:
+                                    122 ;src/main.c:145: fastcpy(HRAM, oam_dma_wait, oam_dma_wait_size);
+    0000002B 21r00r00               123 	ld	hl, #_oam_dma_wait_size
+    0000002E 4E                     124 	ld	c, (hl)
+    0000002F 06 00                  125 	ld	b, #0x00
+    00000031 C5                     126 	push	bc
+    00000032 21r00r00               127 	ld	hl, #_oam_dma_wait
+    00000035 E5                     128 	push	hl
+    00000036 21 80 FF               129 	ld	hl, #0xff80
+    00000039 E5                     130 	push	hl
+    0000003A CDr00r00               131 	call	_fastcpy
+    0000003D E8 06                  132 	add	sp, #6
+                                    133 ;src/main.c:147: vblank_happened = false;
+    0000003F 21r00r00               134 	ld	hl, #_vblank_happened
+    00000042 36 00                  135 	ld	(hl), #0x00
+                                    136 ;src/gb.h:157: inline void enable_lcd_stat_int(uint8_t _int){*reg(REG_LCD_STAT) |= _int;}
+    00000044 11 41 FF               137 	ld	de, #0xff41
+    00000047 1A                     138 	ld	a,(de)
+    00000048 F6 48                  139 	or	a, #0x48
+    0000004A 21 41 FF               140 	ld	hl, #0xff41
+    0000004D 77                     141 	ld	(hl), a
+                                    142 ;src/gb.h:159: inline void set_lyc(uint8_t _lyc){*reg(REG_LYC) = _lyc;}
+    0000004E 2E 45                  143 	ld	l, #0x45
+    00000050 36 91                  144 	ld	(hl), #0x91
+                                    145 ;src/gb.h:167: inline void set_bg_pal(uint8_t _data){*reg(REG_BGP) = bg_pal = _data;}
+    00000052 21r00r00               146 	ld	hl, #_bg_pal
+    00000055 36 F0                  147 	ld	(hl), #0xf0
+    00000057 21 47 FF               148 	ld	hl, #0xff47
+    0000005A 36 F0                  149 	ld	(hl), #0xf0
+                                    150 ;src/gb.h:168: inline void set_obj_pal0(uint8_t _data){*reg(REG_OBP0) = obj_pal0 = _data;}
+    0000005C 21r00r00               151 	ld	hl, #_obj_pal0
+    0000005F 36 E4                  152 	ld	(hl), #0xe4
+    00000061 21 48 FF               153 	ld	hl, #0xff48
+    00000064 36 E4                  154 	ld	(hl), #0xe4
+                                    155 ;src/gb.h:169: inline void set_obj_pal1(uint8_t _data){*reg(REG_OBP1) = obj_pal1 = _data;}
+    00000066 21r00r00               156 	ld	hl, #_obj_pal1
+    00000069 36 27                  157 	ld	(hl), #0x27
+    0000006B 21 49 FF               158 	ld	hl, #0xff49
+    0000006E 36 27                  159 	ld	(hl), #0x27
+                                    160 ;src/main.c:155: set_bg_map_select(false);
+    00000070 AF                     161 	xor	a, a
+    00000071 F5                     162 	push	af
+    00000072 33                     163 	inc	sp
+    00000073 CDr00r00               164 	call	_set_bg_map_select
+    00000076 33                     165 	inc	sp
+                                    166 ;src/main.c:156: set_bg_chr(bg_tiles, 0x0000, sizeof(bg_tiles));
+    00000077 21 00 10               167 	ld	hl, #0x1000
+    0000007A E5                     168 	push	hl
+    0000007B 26 00                  169 	ld	h, #0x00
+    0000007D E5                     170 	push	hl
+    0000007E 21r00r00               171 	ld	hl, #_bg_tiles
+    00000081 E5                     172 	push	hl
+    00000082 CDr00r00               173 	call	_set_bg_chr
+    00000085 E8 06                  174 	add	sp, #6
+                                    175 ;src/main.c:157: fill(BG_MAP, 0x7F, 0x0400);
+    00000087 21 00 04               176 	ld	hl, #0x0400
+    0000008A E5                     177 	push	hl
+    0000008B 3E 7F                  178 	ld	a, #0x7f
+    0000008D F5                     179 	push	af
+    0000008E 33                     180 	inc	sp
+    0000008F 26 98                  181 	ld	h, #0x98
+    00000091 E5                     182 	push	hl
+    00000092 CDr00r00               183 	call	_fill
+    00000095 E8 05                  184 	add	sp, #5
+                                    185 ;src/gb.h:189: inline void set_bg_scroll(uint8_t _sx, uint8_t _sy){scroll_x = _sx; scroll_y = _sy;}
+    00000097 21r00r00               186 	ld	hl, #_scroll_x
+    0000009A 36 00                  187 	ld	(hl), #0x00
+    0000009C 21r00r00               188 	ld	hl, #_scroll_y
+    0000009F 36 00                  189 	ld	(hl), #0x00
+                                    190 ;src/main.c:160: for(uint8_t i = 0; i < 4; i++)
+    000000A1 F8 05                  191 	ldhl	sp,#5
+    000000A3 36 00                  192 	ld	(hl), #0x00
+    000000A5                        193 00139$:
+    000000A5 F8 05                  194 	ldhl	sp,#5
+    000000A7 7E                     195 	ld	a, (hl)
+    000000A8 D6 04                  196 	sub	a, #0x04
+    000000AA D2r08r01               197 	jp	NC, 00102$
+                                    198 ;src/main.c:161: for(uint8_t j = 0; j < 16; j++)
+    000000AD 2B                     199 	dec	hl
+    000000AE 36 00                  200 	ld	(hl), #0x00
+    000000B0                        201 00136$:
+    000000B0 F8 04                  202 	ldhl	sp,#4
+    000000B2 7E                     203 	ld	a, (hl)
+    000000B3 D6 10                  204 	sub	a, #0x10
+    000000B5 D2r02r01               205 	jp	NC, 00140$
+                                    206 ;src/main.c:162: set_bg_map_tile_xy(j + 2, i + 8, ((i * 16) + j) & 0x1F);
+    000000B8 23                     207 	inc	hl
+    000000B9 7E                     208 	ld	a, (hl)
+    000000BA CB 37                  209 	swap	a
+    000000BC E6 F0                  210 	and	a, #0xf0
+    000000BE 4F                     211 	ld	c, a
+    000000BF 2B                     212 	dec	hl
+    000000C0 5E                     213 	ld	e, (hl)
+    000000C1 79                     214 	ld	a, c
+    000000C2 83                     215 	add	a, e
+    000000C3 E6 1F                  216 	and	a, #0x1f
+    000000C5 2B                     217 	dec	hl
+    000000C6 2B                     218 	dec	hl
+    000000C7 77                     219 	ld	(hl), a
+    000000C8 F8 05                  220 	ldhl	sp,#5
+    000000CA 7E                     221 	ld	a, (hl)
+    000000CB C6 08                  222 	add	a, #0x08
+    000000CD 1C                     223 	inc	e
+    000000CE 1C                     224 	inc	e
+                                    225 ;src/gb.h:175: inline void set_bg_map_tile_xy(uint8_t _x, uint8_t _y, uint8_t _tile){set_bg_map_tile((_y << 5) + _x, _tile);}
+    000000CF 4F                     226 	ld	c, a
+    000000D0 06 00                  227 	ld	b, #0x00
+    000000D2 CB 21                  228 	sla	c
+    000000D4 CB 10                  229 	rl	b
+    000000D6 CB 21                  230 	sla	c
+    000000D8 CB 10                  231 	rl	b
+    000000DA CB 21                  232 	sla	c
+    000000DC CB 10                  233 	rl	b
+    000000DE CB 21                  234 	sla	c
+    000000E0 CB 10                  235 	rl	b
+    000000E2 CB 21                  236 	sla	c
+    000000E4 CB 10                  237 	rl	b
+    000000E6 F8 00                  238 	ldhl	sp,#0
+    000000E8 73                     239 	ld	(hl), e
+    000000E9 23                     240 	inc	hl
+    000000EA 36 00                  241 	ld	(hl), #0x00
+    000000EC E1                     242 	pop	hl
+    000000ED E5                     243 	push	hl
+    000000EE 09                     244 	add	hl, bc
+    000000EF 4D                     245 	ld	c, l
+    000000F0 44                     246 	ld	b, h
+    000000F1 F8 02                  247 	ldhl	sp,#2
+    000000F3 7E                     248 	ld	a, (hl)
+    000000F4 F5                     249 	push	af
+    000000F5 33                     250 	inc	sp
+    000000F6 C5                     251 	push	bc
+    000000F7 CDr00r00               252 	call	_set_bg_map_tile
+    000000FA E8 03                  253 	add	sp, #3
+                                    254 ;src/main.c:161: for(uint8_t j = 0; j < 16; j++)
+    000000FC F8 04                  255 	ldhl	sp,#4
+    000000FE 34                     256 	inc	(hl)
+    000000FF C3rB0r00               257 	jp	00136$
+    00000102                        258 00140$:
+                                    259 ;src/main.c:160: for(uint8_t i = 0; i < 4; i++)
+    00000102 F8 05                  260 	ldhl	sp,#5
+    00000104 34                     261 	inc	(hl)
+    00000105 C3rA5r00               262 	jp	00139$
+    00000108                        263 00102$:
+                                    264 ;src/gb.h:153: inline void disable_obj(){*reg(REG_LCDC) &= ~LCDC_OBJ_ENABLE;}
+    00000108 11 40 FF               265 	ld	de, #0xff40
+    0000010B 1A                     266 	ld	a,(de)
+    0000010C CB 8F                  267 	res	1, a
+    0000010E 21 40 FF               268 	ld	hl, #0xff40
+    00000111 77                     269 	ld	(hl), a
+                                    270 ;src/gb.h:151: inline void disable_win(){*reg(REG_LCDC) &= ~LCDC_WIN_ENABLE;}
+    00000112 11 40 FF               271 	ld	de, #0xff40
+    00000115 1A                     272 	ld	a,(de)
+    00000116 CB AF                  273 	res	5, a
+    00000118 2E 40                  274 	ld	l, #0x40
+    0000011A 77                     275 	ld	(hl), a
+                                    276 ;src/gb.h:148: inline void enable_bg(){*reg(REG_LCDC) |= LCDC_BG_ENABLE;}
+    0000011B 11 40 FF               277 	ld	de, #0xff40
+    0000011E 1A                     278 	ld	a,(de)
+    0000011F 4F                     279 	ld	c, a
+    00000120 06 00                  280 	ld	b, #0x00
+    00000122 CB C1                  281 	set	0, c
+    00000124 2E 40                  282 	ld	l, #0x40
+    00000126 71                     283 	ld	(hl), c
+                                    284 ;src/gb.h:142: inline void enable_display(){*reg(REG_LCDC) |= LCDC_DISPLAY_ENABLE;}
+    00000127 11 40 FF               285 	ld	de, #0xff40
+    0000012A 1A                     286 	ld	a,(de)
+    0000012B 4F                     287 	ld	c, a
+    0000012C 06 00                  288 	ld	b, #0x00
+    0000012E CB F9                  289 	set	7, c
+    00000130 2E 40                  290 	ld	l, #0x40
+    00000132 71                     291 	ld	(hl), c
+                                    292 ;src/main.c:169: fastcpy(&gb8_mem, &gb8_font, sizeof(gb8_font));
+    00000133 21 50 00               293 	ld	hl, #0x0050
+    00000136 E5                     294 	push	hl
+    00000137 21rE5r01               295 	ld	hl, #_gb8_font
+    0000013A E5                     296 	push	hl
+    0000013B 21r5Ar00               297 	ld	hl, #_gb8_mem
+    0000013E E5                     298 	push	hl
+    0000013F CDr00r00               299 	call	_fastcpy
+    00000142 E8 06                  300 	add	sp, #6
+                                    301 ;src/main.c:170: fastcpy(&gb8_mem + GB8_PROGRAM_START, &rom, sizeof(rom));
+    00000144 21 00 0E               302 	ld	hl, #0x0e00
+    00000147 E5                     303 	push	hl
+    00000148 21r00r00               304 	ld	hl, #_rom
+    0000014B E5                     305 	push	hl
+    0000014C 21r5Ar02               306 	ld	hl, #(_gb8_mem + 0x0200)
+    0000014F E5                     307 	push	hl
+    00000150 CDr00r00               308 	call	_fastcpy
+    00000153 E8 06                  309 	add	sp, #6
+                                    310 ;src/main.c:171: gb8_pc = GB8_PROGRAM_START;
+    00000155 21r02r00               311 	ld	hl, #_gb8_pc
+    00000158 36 00                  312 	ld	(hl), #0x00
+    0000015A 23                     313 	inc	hl
+    0000015B 36 02                  314 	ld	(hl), #0x02
+                                    315 ;src/main.c:172: gb8_stack_p = 0;
+    0000015D 21r44r00               316 	ld	hl, #_gb8_stack_p
+    00000160 36 00                  317 	ld	(hl), #0x00
+                                    318 ;src/main.c:173: for(uint8_t i = 0; i < 16; i++) gb8_v[i] = 0;
+    00000162 F8 03                  319 	ldhl	sp,#3
+    00000164 36 00                  320 	ld	(hl), #0x00
+    00000166                        321 00142$:
+    00000166 F8 03                  322 	ldhl	sp,#3
+    00000168 7E                     323 	ld	a, (hl)
+    00000169 D6 10                  324 	sub	a, #0x10
+    0000016B 30 10                  325 	jr	NC,00103$
+    0000016D 11r45r00               326 	ld	de, #_gb8_v
+    00000170 6E                     327 	ld	l, (hl)
+    00000171 26 00                  328 	ld	h, #0x00
+    00000173 19                     329 	add	hl, de
+    00000174 4D                     330 	ld	c, l
+    00000175 44                     331 	ld	b, h
+    00000176 AF                     332 	xor	a, a
+    00000177 02                     333 	ld	(bc), a
+    00000178 F8 03                  334 	ldhl	sp,#3
+    0000017A 34                     335 	inc	(hl)
+    0000017B 18 E9                  336 	jr	00142$
+    0000017D                        337 00103$:
+                                    338 ;src/main.c:174: gb8_i = 0;
+    0000017D 21r56r00               339 	ld	hl, #_gb8_i
+    00000180 36 00                  340 	ld	(hl), #0x00
+    00000182 23                     341 	inc	hl
+    00000183 36 00                  342 	ld	(hl), #0x00
+                                    343 ;src/main.c:175: gb8_delay_timer = 0;
+    00000185 21r58r00               344 	ld	hl, #_gb8_delay_timer
+    00000188 36 00                  345 	ld	(hl), #0x00
+                                    346 ;src/main.c:176: gb8_sound_timer = 0;
+    0000018A 21r59r00               347 	ld	hl, #_gb8_sound_timer
+    0000018D 36 00                  348 	ld	(hl), #0x00
+                                    349 ;src/gb.h:137: inline void clear_int_request_flags(){*reg(REG_IF) = 0x00;}
+    0000018F 21 0F FF               350 	ld	hl, #0xff0f
+    00000192 36 00                  351 	ld	(hl), #0x00
+                                    352 ;src/gb.h:135: inline void enable_int(uint8_t _int){*reg(REG_IE) |= _int;}
+    00000194 11 FF FF               353 	ld	de, #0xffff
+    00000197 1A                     354 	ld	a,(de)
+    00000198 F6 03                  355 	or	a, #0x03
+    0000019A 2E FF                  356 	ld	l, #0xff
+    0000019C 77                     357 	ld	(hl), a
+                                    358 ;src/main.c:180: ei();
+    0000019D FB                     359 	ei
+                                    360 ;src/main.c:183: while(!vblank_happened) halt();
+    0000019E                        361 00104$:
+    0000019E 21r00r00               362 	ld	hl, #_vblank_happened
+    000001A1 CB 46                  363 	bit	0, (hl)
+    000001A3 20 04                  364 	jr	NZ,00106$
+    000001A5 76                     365 	halt
+    000001A6 00                     366 	nop
+    000001A7 18 F5                  367 	jr	00104$
+    000001A9                        368 00106$:
+                                    369 ;src/main.c:184: vblank_happened = false;
+    000001A9 21r00r00               370 	ld	hl, #_vblank_happened
+    000001AC 36 00                  371 	ld	(hl), #0x00
+                                    372 ;src/main.c:185: read_joypad();
+    000001AE CDr00r00               373 	call	_read_joypad
+                                    374 ;src/main.c:187: for(uint8_t i = 0; i < GB8_INSTR_PER_FRAME; i++) gb8_step();
+    000001B1 0E 00                  375 	ld	c, #0x00
+    000001B3                        376 00145$:
+    000001B3 79                     377 	ld	a, c
+    000001B4 D6 07                  378 	sub	a, #0x07
+    000001B6 30 08                  379 	jr	NC,00107$
+    000001B8 C5                     380 	push	bc
+    000001B9 CDrADr03               381 	call	_gb8_step
+    000001BC C1                     382 	pop	bc
+    000001BD 0C                     383 	inc	c
+    000001BE 18 F3                  384 	jr	00145$
+    000001C0                        385 00107$:
+                                    386 ;src/main.c:189: if(gb8_delay_timer > 0) gb8_delay_timer--;
+    000001C0 21r58r00               387 	ld	hl, #_gb8_delay_timer
+    000001C3 7E                     388 	ld	a, (hl)
+    000001C4 B7                     389 	or	a, a
+    000001C5 28 01                  390 	jr	Z,00109$
+    000001C7 35                     391 	dec	(hl)
+    000001C8                        392 00109$:
+                                    393 ;src/main.c:190: if(gb8_sound_timer > 0) gb8_sound_timer--;
+    000001C8 21r59r00               394 	ld	hl, #_gb8_sound_timer
+    000001CB 7E                     395 	ld	a, (hl)
+    000001CC B7                     396 	or	a, a
+    000001CD 28 CF                  397 	jr	Z,00104$
+    000001CF 35                     398 	dec	(hl)
+    000001D0 18 CC                  399 	jr	00104$
+                                    400 ;src/main.c:195: }
+    000001D2 E8 06                  401 	add	sp, #6
+    000001D4 C9                     402 	ret
+    000001D5                        403 _gb8_key_map:
+    000001D5 00                     404 	.db #0x00	; 0
+    000001D6 00                     405 	.db #0x00	; 0
+    000001D7 00                     406 	.db #0x00	; 0
+    000001D8 00                     407 	.db #0x00	; 0
+    000001D9 02                     408 	.db #0x02	; 2
+    000001DA 40                     409 	.db #0x40	; 64
+    000001DB 01                     410 	.db #0x01	; 1
+    000001DC 20                     411 	.db #0x20	; 32
+    000001DD 80                     412 	.db #0x80	; 128
+    000001DE 10                     413 	.db #0x10	; 16
+    000001DF 00                     414 	.db #0x00	; 0
+    000001E0 00                     415 	.db #0x00	; 0
+    000001E1 00                     416 	.db #0x00	; 0
+    000001E2 00                     417 	.db #0x00	; 0
+    000001E3 00                     418 	.db #0x00	; 0
+    000001E4 00                     419 	.db #0x00	; 0
+    000001E5                        420 _gb8_font:
+    000001E5 F0                     421 	.db #0xf0	; 240
+    000001E6 90                     422 	.db #0x90	; 144
+    000001E7 90                     423 	.db #0x90	; 144
+    000001E8 90                     424 	.db #0x90	; 144
+    000001E9 F0                     425 	.db #0xf0	; 240
+    000001EA 20                     426 	.db #0x20	; 32
+    000001EB 60                     427 	.db #0x60	; 96
+    000001EC 20                     428 	.db #0x20	; 32
+    000001ED 20                     429 	.db #0x20	; 32
+    000001EE 70                     430 	.db #0x70	; 112	'p'
+    000001EF F0                     431 	.db #0xf0	; 240
+    000001F0 10                     432 	.db #0x10	; 16
+    000001F1 F0                     433 	.db #0xf0	; 240
+    000001F2 80                     434 	.db #0x80	; 128
+    000001F3 F0                     435 	.db #0xf0	; 240
+    000001F4 F0                     436 	.db #0xf0	; 240
+    000001F5 10                     437 	.db #0x10	; 16
+    000001F6 F0                     438 	.db #0xf0	; 240
+    000001F7 10                     439 	.db #0x10	; 16
+    000001F8 F0                     440 	.db #0xf0	; 240
+    000001F9 90                     441 	.db #0x90	; 144
+    000001FA 90                     442 	.db #0x90	; 144
+    000001FB F0                     443 	.db #0xf0	; 240
+    000001FC 10                     444 	.db #0x10	; 16
+    000001FD 10                     445 	.db #0x10	; 16
+    000001FE F0                     446 	.db #0xf0	; 240
+    000001FF 80                     447 	.db #0x80	; 128
+    00000200 F0                     448 	.db #0xf0	; 240
+    00000201 10                     449 	.db #0x10	; 16
+    00000202 F0                     450 	.db #0xf0	; 240
+    00000203 F0                     451 	.db #0xf0	; 240
+    00000204 80                     452 	.db #0x80	; 128
+    00000205 F0                     453 	.db #0xf0	; 240
+    00000206 90                     454 	.db #0x90	; 144
+    00000207 F0                     455 	.db #0xf0	; 240
+    00000208 F0                     456 	.db #0xf0	; 240
+    00000209 10                     457 	.db #0x10	; 16
+    0000020A 20                     458 	.db #0x20	; 32
+    0000020B 40                     459 	.db #0x40	; 64
+    0000020C 40                     460 	.db #0x40	; 64
+    0000020D F0                     461 	.db #0xf0	; 240
+    0000020E 90                     462 	.db #0x90	; 144
+    0000020F F0                     463 	.db #0xf0	; 240
+    00000210 90                     464 	.db #0x90	; 144
+    00000211 F0                     465 	.db #0xf0	; 240
+    00000212 F0                     466 	.db #0xf0	; 240
+    00000213 90                     467 	.db #0x90	; 144
+    00000214 F0                     468 	.db #0xf0	; 240
+    00000215 10                     469 	.db #0x10	; 16
+    00000216 F0                     470 	.db #0xf0	; 240
+    00000217 F0                     471 	.db #0xf0	; 240
+    00000218 90                     472 	.db #0x90	; 144
+    00000219 F0                     473 	.db #0xf0	; 240
+    0000021A 90                     474 	.db #0x90	; 144
+    0000021B 90                     475 	.db #0x90	; 144
+    0000021C E0                     476 	.db #0xe0	; 224
+    0000021D 90                     477 	.db #0x90	; 144
+    0000021E E0                     478 	.db #0xe0	; 224
+    0000021F 90                     479 	.db #0x90	; 144
+    00000220 E0                     480 	.db #0xe0	; 224
+    00000221 F0                     481 	.db #0xf0	; 240
+    00000222 80                     482 	.db #0x80	; 128
+    00000223 80                     483 	.db #0x80	; 128
+    00000224 80                     484 	.db #0x80	; 128
+    00000225 F0                     485 	.db #0xf0	; 240
+    00000226 E0                     486 	.db #0xe0	; 224
+    00000227 90                     487 	.db #0x90	; 144
+    00000228 90                     488 	.db #0x90	; 144
+    00000229 90                     489 	.db #0x90	; 144
+    0000022A E0                     490 	.db #0xe0	; 224
+    0000022B F0                     491 	.db #0xf0	; 240
+    0000022C 80                     492 	.db #0x80	; 128
+    0000022D F0                     493 	.db #0xf0	; 240
+    0000022E 80                     494 	.db #0x80	; 128
+    0000022F F0                     495 	.db #0xf0	; 240
+    00000230 F0                     496 	.db #0xf0	; 240
+    00000231 80                     497 	.db #0x80	; 128
+    00000232 F0                     498 	.db #0xf0	; 240
+    00000233 80                     499 	.db #0x80	; 128
+    00000234 80                     500 	.db #0x80	; 128
+                                    501 ;src/main.c:197: void gb8_clear_screen(){
+                                    502 ;	---------------------------------
+                                    503 ; Function gb8_clear_screen
+                                    504 ; ---------------------------------
+    00000235                        505 _gb8_clear_screen::
+                                    506 ;src/main.c:198: fill(&gb8_display, 0x00, sizeof(gb8_display));
+    00000235 21 00 02               507 	ld	hl, #0x0200
+    00000238 E5                     508 	push	hl
+    00000239 AF                     509 	xor	a, a
+    0000023A F5                     510 	push	af
+    0000023B 33                     511 	inc	sp
+    0000023C 21 00 D8               512 	ld	hl, #_gb8_display
+    0000023F E5                     513 	push	hl
+    00000240 CDr00r00               514 	call	_fill
+    00000243 E8 05                  515 	add	sp, #5
+                                    516 ;src/main.c:199: }
+    00000245 C9                     517 	ret
+                                    518 ;src/main.c:201: uint8_t gb8_get_key(uint8_t _key){
+                                    519 ;	---------------------------------
+                                    520 ; Function gb8_get_key
+                                    521 ; ---------------------------------
+    00000246                        522 _gb8_get_key::
+                                    523 ;src/main.c:202: return key_hold(gb8_key_map[_key]);
+    00000246 11rD5r01               524 	ld	de, #_gb8_key_map
+    00000249 F8 02                  525 	ldhl	sp,#2
+    0000024B 6E                     526 	ld	l, (hl)
+    0000024C 26 00                  527 	ld	h, #0x00
+    0000024E 19                     528 	add	hl, de
+    0000024F 4D                     529 	ld	c, l
+    00000250 44                     530 	ld	b, h
+    00000251 0A                     531 	ld	a, (bc)
+    00000252 F5                     532 	push	af
+    00000253 33                     533 	inc	sp
+    00000254 CDr00r00               534 	call	_key_hold
+    00000257 33                     535 	inc	sp
+                                    536 ;src/main.c:203: }
+    00000258 C9                     537 	ret
+                                    538 ;src/main.c:205: void gb8_draw_sprite(uint8_t _px, uint8_t _py, uint8_t _n){
+                                    539 ;	---------------------------------
+                                    540 ; Function gb8_draw_sprite
+                                    541 ; ---------------------------------
+    00000259                        542 _gb8_draw_sprite::
+                                    543 ;src/main.c:418: __endasm;
+                         00000000   544 	line	= 0
+                         00000001   545 	qbyte	= 1
+                         00000007   546 	px	= 7
+                         00000008   547 	py	= 8
+                         00000009   548 	n	= 9
+                         00000002   549 	dest_p	= 2
+                         00000000   550 	src_b	= 0
+    00000259 E8 FB                  551 	add	sp, #-5
+    0000025B 21r54r00               552 	ld	hl, #(_gb8_v + 0x0F) ;gb8_v[0xF] = 0
+    0000025E 36 00                  553 	ld	(hl), #0
+    00000260 01 00 D8               554 	ld	bc, #_gb8_display ;dest_p = dest pixel in display
+    00000263 F8 08                  555 	ldhl	sp, #py
+    00000265 7E                     556 	ld	a, (hl)
+    00000266 21 00 00               557 	ld	hl, #0
+    00000269 CB 5F                  558 	bit	3, a
+    0000026B 28 01                  559 	jr	z, 20$
+    0000026D 24                     560 	inc	h
+    0000026E                        561 	   20$:
+    0000026E CB 67                  562 	bit 4, a
+    00000270 28 01                  563 	jr	z, 21$
+    00000272 2C                     564 	inc	l
+    00000273                        565 	   21$:
+    00000273 E6 07                  566 	and #0x07
+    00000275 87                     567 	add	a
+    00000276 85                     568 	add	l
+    00000277 6F                     569 	ld	l, a
+    00000278 09                     570 	add	hl, bc
+    00000279 44                     571 	ld	b, h
+    0000027A 4D                     572 	ld	c, l
+    0000027B F8 07                  573 	ldhl	sp, #px
+    0000027D 7E                     574 	ld	a, (hl)
+    0000027E E6 38                  575 	and	#0x38
+    00000280 CB 27                  576 	sla	a
+    00000282 CB 27                  577 	sla	a
+    00000284 6F                     578 	ld	l, a
+    00000285 26 00                  579 	ld	h, #0
+    00000287 09                     580 	add	hl, bc
+    00000288 44                     581 	ld	b, h
+    00000289 4D                     582 	ld	c, l
+    0000028A C5                     583 	push	bc
+    0000028B 11r5Ar00               584 	ld	de, #_gb8_mem ;src_b = src byte from font
+    0000028E 21r56r00               585 	ld	hl, #_gb8_i
+    00000291 2A                     586 	ld	a, (hl+)
+    00000292 66                     587 	ld	h, (hl)
+    00000293 6F                     588 	ld	l, a
+    00000294 19                     589 	add	hl, de
+    00000295 54                     590 	ld	d, h
+    00000296 5D                     591 	ld	e, l
+    00000297 D5                     592 	push	de
+    00000298 F8 0D                  593 	ldhl	sp, #(n + 4)
+    0000029A 7E                     594 	ld	a, (hl)
+    0000029B E6 0F                  595 	and	#0x0F
+    0000029D 77                     596 	ld	(hl), a
+    0000029E CAr60r03               597 	jp	z, 10$
+    000002A1 F8 04                  598 	ldhl	sp, #(line + 4)
+    000002A3 36 00                  599 	ld	(hl), #0
+    000002A5                        600 	        0$:
+    000002A5 F8 00                  601 	ldhl sp, #src_b
+    000002A7 2A                     602 	ld	a, (hl+)
+    000002A8 66                     603 	ld	h, (hl)
+    000002A9 6F                     604 	ld	l, a
+    000002AA 4E                     605 	ld	c, (hl)
+    000002AB 06 00                  606 	ld	b, #0
+    000002AD CB 21                  607 	sla	c
+    000002AF CB 10                  608 	rl	b
+    000002B1 21r00r00               609 	ld	hl, #_pixel_scale_table
+    000002B4 09                     610 	add	hl, bc
+    000002B5 2A                     611 	ld	a, (hl+)
+    000002B6 4F                     612 	ld	c, a
+    000002B7 46                     613 	ld	b, (hl)
+    000002B8 AF                     614 	xor	a
+    000002B9 5F                     615 	ld	e, a
+    000002BA 57                     616 	ld	d, a
+    000002BB F8 0B                  617 	ldhl	sp, #(px + 4)
+    000002BD 7E                     618 	ld	a, (hl)
+    000002BE E6 07                  619 	and	#0x07
+    000002C0 28 13                  620 	jr	z, 2$
+    000002C2                        621 	        1$:
+    000002C2 CB 39                  622 	srl c
+    000002C4 CB 18                  623 	rr	b
+    000002C6 CB 1B                  624 	rr	e
+    000002C8 CB 1A                  625 	rr	d
+    000002CA CB 39                  626 	srl	c
+    000002CC CB 18                  627 	rr	b
+    000002CE CB 1B                  628 	rr	e
+    000002D0 CB 1A                  629 	rr	d
+    000002D2 3D                     630 	dec	a
+    000002D3 20 ED                  631 	jr	nz, 1$
+    000002D5                        632 	        2$:
+    000002D5 F8 05                  633 	ldhl sp, #(qbyte + 4)
+    000002D7 79                     634 	ld	a, c
+    000002D8 22                     635 	ld	(hl+), a
+    000002D9 78                     636 	ld	a, b
+    000002DA 22                     637 	ld	(hl+), a
+    000002DB 7B                     638 	ld	a, e
+    000002DC 22                     639 	ld	(hl+), a
+    000002DD 72                     640 	ld	(hl), d
+    000002DE F8 0C                  641 	ldhl	sp, #(py + 4)
+    000002E0 7E                     642 	ld	a, (hl)
+    000002E1 F8 04                  643 	ldhl	sp, #(line + 4)
+    000002E3 56                     644 	ld	d, (hl)
+    000002E4 86                     645 	add	(hl)
+    000002E5 5F                     646 	ld	e, a
+    000002E6 F8 02                  647 	ldhl	sp, #dest_p
+    000002E8 2A                     648 	ld	a, (hl+)
+    000002E9 46                     649 	ld	b, (hl)
+    000002EA 4F                     650 	ld	c, a
+    000002EB 7A                     651 	ld	a, d
+    000002EC 87                     652 	add	a
+    000002ED 81                     653 	add	c
+    000002EE E6 0F                  654 	and	#0x0F
+    000002F0 57                     655 	ld	d, a
+    000002F1 79                     656 	ld	a, c
+    000002F2 E6 F0                  657 	and	#0xF0
+    000002F4 82                     658 	add	d
+    000002F5 4F                     659 	ld	c, a
+    000002F6 78                     660 	ld	a, b
+    000002F7 CB 5B                  661 	bit	3, e
+    000002F9 28 04                  662 	jr	z, 40$
+    000002FB F6 01                  663 	or	#0x01
+    000002FD 18 02                  664 	jr	41$
+    000002FF E6 FE                  665 	40$:and	#0xFE
+    00000301                        666 	       41$:
+    00000301 47                     667 	ld b, a
+    00000302 79                     668 	ld	a, c
+    00000303 CB 63                  669 	bit	4, e
+    00000305 28 04                  670 	jr	z, 42$
+    00000307 F6 01                  671 	or	#0x01
+    00000309 18 02                  672 	jr	43$
+    0000030B E6 FE                  673 	42$:and	#0xFE
+    0000030D                        674 	       43$:
+    0000030D 4F                     675 	ld c, a
+    0000030E 1E 00                  676 	ld	e, #0
+    00000310 F8 05                  677 	ldhl	sp, #(qbyte + 4 + 0)
+    00000312 0A                     678 	ld	a, (bc)
+    00000313 57                     679 	ld	d, a
+    00000314 AE                     680 	xor	(hl)
+    00000315 02                     681 	ld	(bc), a
+    00000316 2A                     682 	ld	a, (hl+)
+    00000317 A2                     683 	and	d
+    00000318 28 02                  684 	jr	z, 30$
+    0000031A 1E 01                  685 	ld	e, #1
+    0000031C                        686 	       30$:
+    0000031C 79                     687 	ld a, c
+    0000031D C6 10                  688 	add	#16
+    0000031F 4F                     689 	ld	c, a
+    00000320 0A                     690 	ld	a, (bc)
+    00000321 57                     691 	ld	d, a
+    00000322 AE                     692 	xor	(hl)
+    00000323 02                     693 	ld	(bc), a
+    00000324 2A                     694 	ld	a, (hl+)
+    00000325 A2                     695 	and	d
+    00000326 28 02                  696 	jr	z, 31$
+    00000328 1E 01                  697 	ld	e, #1
+    0000032A                        698 	       31$:
+    0000032A 79                     699 	ld a, c
+    0000032B C6 10                  700 	add	#16
+    0000032D 4F                     701 	ld	c, a
+    0000032E 0A                     702 	ld	a, (bc)
+    0000032F 57                     703 	ld	d, a
+    00000330 AE                     704 	xor	(hl)
+    00000331 02                     705 	ld	(bc), a
+    00000332 2A                     706 	ld	a, (hl+)
+    00000333 A2                     707 	and	d
+    00000334 28 02                  708 	jr	z, 32$
+    00000336 1E 01                  709 	ld	e, #1
+    00000338                        710 	       32$:
+    00000338 79                     711 	ld a, c
+    00000339 C6 10                  712 	add	#16
+    0000033B 4F                     713 	ld	c, a
+    0000033C 0A                     714 	ld	a, (bc)
+    0000033D 57                     715 	ld	d, a
+    0000033E AE                     716 	xor	(hl)
+    0000033F 02                     717 	ld	(bc), a
+    00000340 2A                     718 	ld	a, (hl+)
+    00000341 A2                     719 	and	d
+    00000342 28 02                  720 	jr	z, 33$
+    00000344 1E 01                  721 	ld	e, #1
+    00000346                        722 	       33$:
+    00000346 79                     723 	ld a, c
+    00000347 C6 10                  724 	add	#16
+    00000349 4F                     725 	ld	c, a
+    0000034A 21r54r00               726 	ld	hl, #(_gb8_v + 0x0F) ;gb8_v[0xF] = e
+    0000034D 7E                     727 	ld	a, (hl)
+    0000034E B3                     728 	or	e
+    0000034F 77                     729 	ld	(hl), a
+    00000350                        730 	        4$:
+    00000350 F8 00                  731 	ldhl sp, #src_b
+    00000352 34                     732 	inc	(hl)
+    00000353 20 02                  733 	jr	nz, 5$
+    00000355 23                     734 	inc	hl
+    00000356 34                     735 	inc	(hl)
+    00000357                        736 	        5$:
+    00000357 F8 04                  737 	ldhl sp, #(line + 4)
+    00000359 34                     738 	inc	(hl)
+    0000035A                        739 	        9$:
+    0000035A F8 0D                  740 	ldhl sp, #(n + 4)
+    0000035C 35                     741 	dec	(hl)
+    0000035D C2rA5r02               742 	jp	nz, 0$
+    00000360                        743 	       10$:
+    00000360 E8 09                  744 	add sp, #9
+                                    745 ;src/main.c:419: }
+    00000362 C9                     746 	ret
+                                    747 ;src/main.c:421: void gb8_bcd_vx(uint8_t _vx){
+                                    748 ;	---------------------------------
+                                    749 ; Function gb8_bcd_vx
+                                    750 ; ---------------------------------
+    00000363                        751 _gb8_bcd_vx::
+                                    752 ;src/main.c:462: __endasm;
+                         00000002   753 	vx	= 2
+    00000363 F8 02                  754 	ldhl	sp, #vx
+    00000365 6E                     755 	ld	l, (hl)
+    00000366 26 00                  756 	ld	h, #0
+    00000368 01r45r00               757 	ld	bc, #_gb8_v
+    0000036B 09                     758 	add	hl, bc
+    0000036C 5E                     759 	ld	e, (hl)
+    0000036D 21r5Ar00               760 	ld	hl, #_gb8_mem
+    00000370 FAr56r00               761 	ld	a, (_gb8_i)
+    00000373 4F                     762 	ld	c, a
+    00000374 FAr57r00               763 	ld	a, (_gb8_i + 1)
+    00000377 47                     764 	ld	b, a
+    00000378 09                     765 	add	hl, bc
+    00000379 7B                     766 	ld	a, e
+    0000037A 16 9C                  767 	ld	d, #-100
+    0000037C CDr8Fr03               768 	call	10$
+    0000037F 70                     769 	ld	(hl), b
+    00000380 23                     770 	inc	hl
+    00000381 16 F6                  771 	ld	d, #-10
+    00000383 CDr8Fr03               772 	call	10$
+    00000386 70                     773 	ld	(hl), b
+    00000387 23                     774 	inc	hl
+    00000388 16 FF                  775 	ld	d, #-1
+    0000038A CDr8Fr03               776 	call	10$
+    0000038D 70                     777 	ld	(hl), b
+    0000038E C9                     778 	ret
+    0000038F                        779 	   10$:
+    0000038F 06 FF                  780 	ld b, #-1
+    00000391                        781 	   11$:
+    00000391 04                     782 	inc b
+    00000392 82                     783 	add	d
+    00000393 38 FC                  784 	jr	c, 11$
+    00000395 9A                     785 	sbc	d
+    00000396 C9                     786 	ret
+                                    787 ;src/main.c:463: }
+    00000397 C9                     788 	ret
+                                    789 ;src/main.c:465: uint8_t gb8_rnd(){
+                                    790 ;	---------------------------------
+                                    791 ; Function gb8_rnd
+                                    792 ; ---------------------------------
+    00000398                        793 _gb8_rnd::
+                                    794 ;src/main.c:480: __endasm;
+    00000398 FAr55r00               795 	ld	a, (_gb8_seed)
+    0000039B 47                     796 	ld	b, a
+    0000039C 0F                     797 	rrca
+    0000039D 0F                     798 	rrca
+    0000039E 0F                     799 	rrca
+    0000039F EE 1F                  800 	xor	#0x1F
+    000003A1 80                     801 	add	b
+    000003A2 DE FF                  802 	sbc	#0xFF
+    000003A4 5F                     803 	ld	e, a
+    000003A5 F0 04                  804 	ldh	a, (0xFF04)
+    000003A7 83                     805 	add	e
+    000003A8 EAr55r00               806 	ld	(_gb8_seed), a
+    000003AB 5F                     807 	ld	e, a
+                                    808 ;src/main.c:481: }
+    000003AC C9                     809 	ret
+                                    810 ;src/main.c:483: void gb8_step(){
+                                    811 ;	---------------------------------
+                                    812 ; Function gb8_step
+                                    813 ; ---------------------------------
+    000003AD                        814 _gb8_step::
+    000003AD E8 F4                  815 	add	sp, #-12
+                                    816 ;src/main.c:484: uint8_t _instr_hi = gb8_mem[gb8_pc++];
+    000003AF 21r03r00               817 	ld	hl, #_gb8_pc + 1
+    000003B2 2B                     818 	dec	hl
+    000003B3 4E                     819 	ld	c, (hl)
+    000003B4 23                     820 	inc	hl
+    000003B5 46                     821 	ld	b, (hl)
+    000003B6 2B                     822 	dec	hl
+    000003B7 34                     823 	inc	(hl)
+    000003B8 20 02                  824 	jr	NZ,00376$
+    000003BA 23                     825 	inc	hl
+    000003BB 34                     826 	inc	(hl)
+    000003BC                        827 00376$:
+    000003BC 21r5Ar00               828 	ld	hl, #_gb8_mem
+    000003BF 09                     829 	add	hl, bc
+    000003C0 4D                     830 	ld	c, l
+    000003C1 44                     831 	ld	b, h
+    000003C2 0A                     832 	ld	a, (bc)
+    000003C3 F8 0A                  833 	ldhl	sp,#10
+    000003C5 77                     834 	ld	(hl), a
+                                    835 ;src/main.c:485: uint8_t _instr_lo = gb8_mem[gb8_pc++];
+    000003C6 21r03r00               836 	ld	hl, #_gb8_pc + 1
+    000003C9 2B                     837 	dec	hl
+    000003CA 4E                     838 	ld	c, (hl)
+    000003CB 23                     839 	inc	hl
+    000003CC 46                     840 	ld	b, (hl)
+    000003CD 2B                     841 	dec	hl
+    000003CE 34                     842 	inc	(hl)
+    000003CF 20 02                  843 	jr	NZ,00377$
+    000003D1 23                     844 	inc	hl
+    000003D2 34                     845 	inc	(hl)
+    000003D3                        846 00377$:
+    000003D3 21r5Ar00               847 	ld	hl, #_gb8_mem
+    000003D6 09                     848 	add	hl, bc
+    000003D7 4D                     849 	ld	c, l
+    000003D8 44                     850 	ld	b, h
+    000003D9 0A                     851 	ld	a, (bc)
+    000003DA F8 0B                  852 	ldhl	sp,#11
+                                    853 ;src/main.c:487: switch(_instr_hi >> 4){
+    000003DC 32                     854 	ld	(hl-), a
+    000003DD 7E                     855 	ld	a, (hl)
+    000003DE CB 37                  856 	swap	a
+    000003E0 E6 0F                  857 	and	a, #0x0f
+    000003E2 F8 04                  858 	ldhl	sp,#4
+    000003E4 77                     859 	ld	(hl), a
+    000003E5 3E 0F                  860 	ld	a, #0x0f
+    000003E7 96                     861 	sub	a, (hl)
+    000003E8 DAr80r0B               862 	jp	C, 00171$
+    000003EB 4E                     863 	ld	c, (hl)
+    000003EC 06 00                  864 	ld	b, #0x00
+    000003EE 21rF5r03               865 	ld	hl, #00378$
+    000003F1 09                     866 	add	hl, bc
+    000003F2 09                     867 	add	hl, bc
+    000003F3 09                     868 	add	hl, bc
+    000003F4 E9                     869 	jp	(hl)
+    000003F5                        870 00378$:
+    000003F5 C3r25r04               871 	jp	00101$
+    000003F8 C3r5Ar04               872 	jp	00105$
+    000003FB C3r78r04               873 	jp	00106$
+    000003FE C3rAFr04               874 	jp	00107$
+    00000401 C3rD7r04               875 	jp	00110$
+    00000404 C3rFFr04               876 	jp	00113$
+    00000407 C3r35r05               877 	jp	00116$
+    0000040A C3r4Dr05               878 	jp	00117$
+    0000040D C3r66r05               879 	jp	00118$
+    00000410 C3r19r08               880 	jp	00129$
+    00000413 C3r4Fr08               881 	jp	00132$
+    00000416 C3r6Dr08               882 	jp	00133$
+    00000419 C3r99r08               883 	jp	00134$
+    0000041C C3rB7r08               884 	jp	00135$
+    0000041F C3rF9r08               885 	jp	00136$
+    00000422 C3r60r09               886 	jp	00144$
+                                    887 ;src/main.c:488: case GB8_INSTR_SPEC:
+    00000425                        888 00101$:
+                                    889 ;src/main.c:489: switch(_instr_lo){
+    00000425 F8 0B                  890 	ldhl	sp,#11
+    00000427 7E                     891 	ld	a, (hl)
+    00000428 D6 E0                  892 	sub	a, #0xe0
+    0000042A 28 0A                  893 	jr	Z,00102$
+    0000042C F8 0B                  894 	ldhl	sp,#11
+    0000042E 7E                     895 	ld	a, (hl)
+    0000042F D6 EE                  896 	sub	a, #0xee
+    00000431 28 09                  897 	jr	Z,00103$
+    00000433 C3r80r0B               898 	jp	00171$
+                                    899 ;src/main.c:490: case GB8_INSTR_SPEC_CLR_SCRN:
+    00000436                        900 00102$:
+                                    901 ;src/main.c:491: gb8_clear_screen();
+    00000436 CDr35r02               902 	call	_gb8_clear_screen
+                                    903 ;src/main.c:492: break;
+    00000439 C3r80r0B               904 	jp	00171$
+                                    905 ;src/main.c:493: case GB8_INSTR_SPEC_RETURN:
+    0000043C                        906 00103$:
+                                    907 ;src/main.c:494: gb8_pc = gb8_stack[--gb8_stack_p];
+    0000043C 21r44r00               908 	ld	hl, #_gb8_stack_p
+    0000043F 35                     909 	dec	(hl)
+    00000440 4E                     910 	ld	c, (hl)
+    00000441 06 00                  911 	ld	b, #0x00
+    00000443 CB 21                  912 	sla	c
+    00000445 CB 10                  913 	rl	b
+    00000447 21r04r00               914 	ld	hl, #_gb8_stack
+    0000044A 09                     915 	add	hl, bc
+    0000044B 4D                     916 	ld	c, l
+    0000044C 44                     917 	ld	b, h
+    0000044D 59                     918 	ld	e, c
+    0000044E 50                     919 	ld	d, b
+    0000044F 1A                     920 	ld	a,(de)
+    00000450 21r02r00               921 	ld	hl, #_gb8_pc
+    00000453 22                     922 	ld	(hl+), a
+    00000454 13                     923 	inc	de
+    00000455 1A                     924 	ld	a, (de)
+    00000456 77                     925 	ld	(hl), a
+                                    926 ;src/main.c:497: break;
+    00000457 C3r80r0B               927 	jp	00171$
+                                    928 ;src/main.c:498: case GB8_INSTR_JUMP_N:
+    0000045A                        929 00105$:
+                                    930 ;src/main.c:499: gb8_pc = ((_instr_hi & 0x0F) << 8) | _instr_lo;
+    0000045A F8 0A                  931 	ldhl	sp,#10
+    0000045C 5E                     932 	ld	e, (hl)
+    0000045D 16 00                  933 	ld	d, #0x00
+    0000045F 7B                     934 	ld	a, e
+    00000460 E6 0F                  935 	and	a, #0x0f
+    00000462 47                     936 	ld	b, a
+    00000463 0E 00                  937 	ld	c, #0x00
+    00000465 0E 00                  938 	ld	c, #0x00
+    00000467 23                     939 	inc	hl
+    00000468 5E                     940 	ld	e, (hl)
+    00000469 16 00                  941 	ld	d, #0x00
+    0000046B 79                     942 	ld	a, c
+    0000046C B3                     943 	or	a, e
+    0000046D 21r02r00               944 	ld	hl, #_gb8_pc
+    00000470 77                     945 	ld	(hl), a
+    00000471 78                     946 	ld	a, b
+    00000472 B2                     947 	or	a, d
+    00000473 23                     948 	inc	hl
+    00000474 77                     949 	ld	(hl), a
+                                    950 ;src/main.c:500: break;
+    00000475 C3r80r0B               951 	jp	00171$
+                                    952 ;src/main.c:501: case GB8_INSTR_CALL_N:
+    00000478                        953 00106$:
+                                    954 ;src/main.c:502: gb8_stack[gb8_stack_p++] = gb8_pc;
+    00000478 21r44r00               955 	ld	hl, #_gb8_stack_p
+    0000047B 4E                     956 	ld	c, (hl)
+    0000047C 34                     957 	inc	(hl)
+    0000047D 06 00                  958 	ld	b, #0x00
+    0000047F CB 21                  959 	sla	c
+    00000481 CB 10                  960 	rl	b
+    00000483 21r04r00               961 	ld	hl, #_gb8_stack
+    00000486 09                     962 	add	hl, bc
+    00000487 4D                     963 	ld	c, l
+    00000488 44                     964 	ld	b, h
+    00000489 21r02r00               965 	ld	hl, #_gb8_pc
+    0000048C 2A                     966 	ld	a, (hl+)
+    0000048D 02                     967 	ld	(bc), a
+    0000048E 03                     968 	inc	bc
+    0000048F 7E                     969 	ld	a, (hl)
+    00000490 02                     970 	ld	(bc), a
+                                    971 ;src/main.c:503: gb8_pc = ((_instr_hi & 0x0F) << 8) | _instr_lo;
+    00000491 F8 0A                  972 	ldhl	sp,#10
+    00000493 5E                     973 	ld	e, (hl)
+    00000494 16 00                  974 	ld	d, #0x00
+    00000496 7B                     975 	ld	a, e
+    00000497 E6 0F                  976 	and	a, #0x0f
+    00000499 47                     977 	ld	b, a
+    0000049A 0E 00                  978 	ld	c, #0x00
+    0000049C 0E 00                  979 	ld	c, #0x00
+    0000049E 23                     980 	inc	hl
+    0000049F 5E                     981 	ld	e, (hl)
+    000004A0 16 00                  982 	ld	d, #0x00
+    000004A2 79                     983 	ld	a, c
+    000004A3 B3                     984 	or	a, e
+    000004A4 21r02r00               985 	ld	hl, #_gb8_pc
+    000004A7 77                     986 	ld	(hl), a
+    000004A8 78                     987 	ld	a, b
+    000004A9 B2                     988 	or	a, d
+    000004AA 23                     989 	inc	hl
+    000004AB 77                     990 	ld	(hl), a
+                                    991 ;src/main.c:504: break;
+    000004AC C3r80r0B               992 	jp	00171$
+                                    993 ;src/main.c:505: case GB8_INSTR_SKIP_EQ_VX_N:
+    000004AF                        994 00107$:
+                                    995 ;src/main.c:506: if(gb8_v[_instr_hi & 0x0F] == _instr_lo) gb8_pc += 2;
+    000004AF F8 0A                  996 	ldhl	sp,#10
+    000004B1 4E                     997 	ld	c, (hl)
+    000004B2 06 00                  998 	ld	b, #0x00
+    000004B4 79                     999 	ld	a, c
+    000004B5 E6 0F                 1000 	and	a, #0x0f
+    000004B7 4F                    1001 	ld	c, a
+    000004B8 06 00                 1002 	ld	b, #0x00
+    000004BA 21r45r00              1003 	ld	hl, #_gb8_v
+    000004BD 09                    1004 	add	hl, bc
+    000004BE 4D                    1005 	ld	c, l
+    000004BF 44                    1006 	ld	b, h
+    000004C0 0A                    1007 	ld	a, (bc)
+    000004C1 4F                    1008 	ld	c, a
+    000004C2 F8 0B                 1009 	ldhl	sp,#11
+    000004C4 7E                    1010 	ld	a, (hl)
+    000004C5 91                    1011 	sub	a, c
+    000004C6 C2r80r0B              1012 	jp	NZ,00171$
+    000004C9 21r02r00              1013 	ld	hl, #_gb8_pc
+    000004CC 7E                    1014 	ld	a, (hl)
+    000004CD C6 02                 1015 	add	a, #0x02
+    000004CF 22                    1016 	ld	(hl+), a
+    000004D0 7E                    1017 	ld	a, (hl)
+    000004D1 CE 00                 1018 	adc	a, #0x00
+    000004D3 77                    1019 	ld	(hl), a
+                                   1020 ;src/main.c:507: break;
+    000004D4 C3r80r0B              1021 	jp	00171$
+                                   1022 ;src/main.c:508: case GB8_INSTR_SKIP_NE_VX_N:
+    000004D7                       1023 00110$:
+                                   1024 ;src/main.c:509: if(gb8_v[_instr_hi & 0x0F] != _instr_lo) gb8_pc += 2;
+    000004D7 F8 0A                 1025 	ldhl	sp,#10
+    000004D9 4E                    1026 	ld	c, (hl)
+    000004DA 06 00                 1027 	ld	b, #0x00
+    000004DC 79                    1028 	ld	a, c
+    000004DD E6 0F                 1029 	and	a, #0x0f
+    000004DF 4F                    1030 	ld	c, a
+    000004E0 06 00                 1031 	ld	b, #0x00
+    000004E2 21r45r00              1032 	ld	hl, #_gb8_v
+    000004E5 09                    1033 	add	hl, bc
+    000004E6 4D                    1034 	ld	c, l
+    000004E7 44                    1035 	ld	b, h
+    000004E8 0A                    1036 	ld	a, (bc)
+    000004E9 4F                    1037 	ld	c, a
+    000004EA F8 0B                 1038 	ldhl	sp,#11
+    000004EC 7E                    1039 	ld	a, (hl)
+    000004ED 91                    1040 	sub	a, c
+    000004EE CAr80r0B              1041 	jp	Z,00171$
+    000004F1 21r02r00              1042 	ld	hl, #_gb8_pc
+    000004F4 7E                    1043 	ld	a, (hl)
+    000004F5 C6 02                 1044 	add	a, #0x02
+    000004F7 22                    1045 	ld	(hl+), a
+    000004F8 7E                    1046 	ld	a, (hl)
+    000004F9 CE 00                 1047 	adc	a, #0x00
+    000004FB 77                    1048 	ld	(hl), a
+                                   1049 ;src/main.c:510: break;
+    000004FC C3r80r0B              1050 	jp	00171$
+                                   1051 ;src/main.c:511: case GB8_INSTR_SKIP_EQ_VX_VY:
+    000004FF                       1052 00113$:
+                                   1053 ;src/main.c:512: if(gb8_v[_instr_hi & 0x0F] == gb8_v[_instr_lo >> 4]) gb8_pc += 2;
+    000004FF F8 0A                 1054 	ldhl	sp,#10
+    00000501 4E                    1055 	ld	c, (hl)
+    00000502 06 00                 1056 	ld	b, #0x00
+    00000504 79                    1057 	ld	a, c
+    00000505 E6 0F                 1058 	and	a, #0x0f
+    00000507 4F                    1059 	ld	c, a
+    00000508 06 00                 1060 	ld	b, #0x00
+    0000050A 21r45r00              1061 	ld	hl, #_gb8_v
+    0000050D 09                    1062 	add	hl, bc
+    0000050E 4D                    1063 	ld	c, l
+    0000050F 44                    1064 	ld	b, h
+    00000510 0A                    1065 	ld	a, (bc)
+    00000511 4F                    1066 	ld	c, a
+    00000512 F8 0B                 1067 	ldhl	sp,#11
+    00000514 7E                    1068 	ld	a, (hl)
+    00000515 CB 37                 1069 	swap	a
+    00000517 E6 0F                 1070 	and	a, #0x0f
+    00000519 C6r45                 1071 	add	a, #<(_gb8_v)
+    0000051B 47                    1072 	ld	b, a
+    0000051C 3E 00                 1073 	ld	a, #0x00
+    0000051E CEs00                 1074 	adc	a, #>(_gb8_v)
+    00000520 58                    1075 	ld	e, b
+    00000521 57                    1076 	ld	d, a
+    00000522 1A                    1077 	ld	a,(de)
+    00000523 91                    1078 	sub	a, c
+    00000524 C2r80r0B              1079 	jp	NZ,00171$
+    00000527 21r02r00              1080 	ld	hl, #_gb8_pc
+    0000052A 7E                    1081 	ld	a, (hl)
+    0000052B C6 02                 1082 	add	a, #0x02
+    0000052D 22                    1083 	ld	(hl+), a
+    0000052E 7E                    1084 	ld	a, (hl)
+    0000052F CE 00                 1085 	adc	a, #0x00
+    00000531 77                    1086 	ld	(hl), a
+                                   1087 ;src/main.c:513: break;
+    00000532 C3r80r0B              1088 	jp	00171$
+                                   1089 ;src/main.c:514: case GB8_INSTR_LOAD_VX_N:
+    00000535                       1090 00116$:
+                                   1091 ;src/main.c:515: gb8_v[_instr_hi & 0x0F] = _instr_lo;
+    00000535 F8 0A                 1092 	ldhl	sp,#10
+    00000537 4E                    1093 	ld	c, (hl)
+    00000538 06 00                 1094 	ld	b, #0x00
+    0000053A 79                    1095 	ld	a, c
+    0000053B E6 0F                 1096 	and	a, #0x0f
+    0000053D 4F                    1097 	ld	c, a
+    0000053E 06 00                 1098 	ld	b, #0x00
+    00000540 21r45r00              1099 	ld	hl, #_gb8_v
+    00000543 09                    1100 	add	hl, bc
+    00000544 4D                    1101 	ld	c, l
+    00000545 44                    1102 	ld	b, h
+    00000546 F8 0B                 1103 	ldhl	sp,#11
+    00000548 7E                    1104 	ld	a, (hl)
+    00000549 02                    1105 	ld	(bc), a
+                                   1106 ;src/main.c:516: break;
+    0000054A C3r80r0B              1107 	jp	00171$
+                                   1108 ;src/main.c:517: case GB8_INSTR_ADD_VX_N:
+    0000054D                       1109 00117$:
+                                   1110 ;src/main.c:518: gb8_v[_instr_hi & 0x0F] += _instr_lo;
+    0000054D F8 0A                 1111 	ldhl	sp,#10
+    0000054F 4E                    1112 	ld	c, (hl)
+    00000550 06 00                 1113 	ld	b, #0x00
+    00000552 79                    1114 	ld	a, c
+    00000553 E6 0F                 1115 	and	a, #0x0f
+    00000555 4F                    1116 	ld	c, a
+    00000556 06 00                 1117 	ld	b, #0x00
+    00000558 21r45r00              1118 	ld	hl, #_gb8_v
+    0000055B 09                    1119 	add	hl, bc
+    0000055C 4D                    1120 	ld	c, l
+    0000055D 44                    1121 	ld	b, h
+    0000055E 0A                    1122 	ld	a, (bc)
+    0000055F F8 0B                 1123 	ldhl	sp,#11
+    00000561 86                    1124 	add	a, (hl)
+    00000562 02                    1125 	ld	(bc), a
+                                   1126 ;src/main.c:519: break;
+    00000563 C3r80r0B              1127 	jp	00171$
+                                   1128 ;src/main.c:520: case GB8_INSTR_ARITH:
+    00000566                       1129 00118$:
+                                   1130 ;src/main.c:521: switch(_instr_lo & 0x0F){
+    00000566 F8 0B                 1131 	ldhl	sp,#11
+    00000568 4E                    1132 	ld	c, (hl)
+    00000569 06 00                 1133 	ld	b, #0x00
+    0000056B 79                    1134 	ld	a, c
+    0000056C E6 0F                 1135 	and	a, #0x0f
+    0000056E 4F                    1136 	ld	c, a
+    0000056F 06 00                 1137 	ld	b, #0x00
+    00000571 79                    1138 	ld	a, c
+    00000572 B7                    1139 	or	a, a
+    00000573 B0                    1140 	or	a, b
+    00000574 CArB1r05              1141 	jp	Z,00119$
+    00000577 79                    1142 	ld	a, c
+    00000578 3D                    1143 	dec	a
+    00000579 B0                    1144 	or	a, b
+    0000057A CArE0r05              1145 	jp	Z,00120$
+    0000057D 79                    1146 	ld	a, c
+    0000057E D6 02                 1147 	sub	a, #0x02
+    00000580 B0                    1148 	or	a, b
+    00000581 CAr15r06              1149 	jp	Z,00121$
+    00000584 79                    1150 	ld	a, c
+    00000585 D6 03                 1151 	sub	a, #0x03
+    00000587 B0                    1152 	or	a, b
+    00000588 CAr4Ar06              1153 	jp	Z,00122$
+    0000058B 79                    1154 	ld	a, c
+    0000058C D6 04                 1155 	sub	a, #0x04
+    0000058E B0                    1156 	or	a, b
+    0000058F CAr7Fr06              1157 	jp	Z,00123$
+    00000592 79                    1158 	ld	a, c
+    00000593 D6 05                 1159 	sub	a, #0x05
+    00000595 B0                    1160 	or	a, b
+    00000596 CArE4r06              1161 	jp	Z,00124$
+    00000599 79                    1162 	ld	a, c
+    0000059A D6 06                 1163 	sub	a, #0x06
+    0000059C B0                    1164 	or	a, b
+    0000059D CAr49r07              1165 	jp	Z,00125$
+    000005A0 79                    1166 	ld	a, c
+    000005A1 D6 07                 1167 	sub	a, #0x07
+    000005A3 B0                    1168 	or	a, b
+    000005A4 CAr7Dr07              1169 	jp	Z,00126$
+    000005A7 79                    1170 	ld	a, c
+    000005A8 D6 0E                 1171 	sub	a, #0x0e
+    000005AA B0                    1172 	or	a, b
+    000005AB CArE5r07              1173 	jp	Z,00127$
+    000005AE C3r80r0B              1174 	jp	00171$
+                                   1175 ;src/main.c:522: case GB8_INSTR_ARITH_LOAD_VX_VY:
+    000005B1                       1176 00119$:
+                                   1177 ;src/main.c:523: gb8_v[_instr_hi & 0x0F] = gb8_v[_instr_lo >> 4];
+    000005B1 F8 0A                 1178 	ldhl	sp,#10
+    000005B3 4E                    1179 	ld	c, (hl)
+    000005B4 06 00                 1180 	ld	b, #0x00
+    000005B6 79                    1181 	ld	a, c
+    000005B7 E6 0F                 1182 	and	a, #0x0f
+    000005B9 4F                    1183 	ld	c, a
+    000005BA 06 00                 1184 	ld	b, #0x00
+    000005BC 21r45r00              1185 	ld	hl, #_gb8_v
+    000005BF 09                    1186 	add	hl, bc
+    000005C0 7D                    1187 	ld	a, l
+    000005C1 54                    1188 	ld	d, h
+    000005C2 F8 05                 1189 	ldhl	sp,#5
+    000005C4 22                    1190 	ld	(hl+), a
+    000005C5 72                    1191 	ld	(hl), d
+    000005C6 F8 0B                 1192 	ldhl	sp,#11
+    000005C8 7E                    1193 	ld	a, (hl)
+    000005C9 CB 37                 1194 	swap	a
+    000005CB E6 0F                 1195 	and	a, #0x0f
+    000005CD C6r45                 1196 	add	a, #<(_gb8_v)
+    000005CF 4F                    1197 	ld	c, a
+    000005D0 3E 00                 1198 	ld	a, #0x00
+    000005D2 CEs00                 1199 	adc	a, #>(_gb8_v)
+    000005D4 47                    1200 	ld	b, a
+    000005D5 0A                    1201 	ld	a, (bc)
+    000005D6 4F                    1202 	ld	c, a
+    000005D7 F8 05                 1203 	ldhl	sp,#5
+    000005D9 2A                    1204 	ld	a, (hl+)
+    000005DA 66                    1205 	ld	h, (hl)
+    000005DB 6F                    1206 	ld	l, a
+    000005DC 71                    1207 	ld	(hl), c
+                                   1208 ;src/main.c:524: break;
+    000005DD C3r80r0B              1209 	jp	00171$
+                                   1210 ;src/main.c:525: case GB8_INSTR_ARITH_OR_VX_VY:
+    000005E0                       1211 00120$:
+                                   1212 ;src/main.c:526: gb8_v[_instr_hi & 0x0F] |= gb8_v[_instr_lo >> 4];
+    000005E0 F8 0A                 1213 	ldhl	sp,#10
+    000005E2 4E                    1214 	ld	c, (hl)
+    000005E3 06 00                 1215 	ld	b, #0x00
+    000005E5 79                    1216 	ld	a, c
+    000005E6 E6 0F                 1217 	and	a, #0x0f
+    000005E8 4F                    1218 	ld	c, a
+    000005E9 06 00                 1219 	ld	b, #0x00
+    000005EB 21r45r00              1220 	ld	hl, #_gb8_v
+    000005EE 09                    1221 	add	hl, bc
+    000005EF 4D                    1222 	ld	c, l
+    000005F0 44                    1223 	ld	b, h
+    000005F1 0A                    1224 	ld	a, (bc)
+    000005F2 F8 05                 1225 	ldhl	sp,#5
+    000005F4 77                    1226 	ld	(hl), a
+    000005F5 F8 0B                 1227 	ldhl	sp,#11
+    000005F7 7E                    1228 	ld	a, (hl)
+    000005F8 CB 37                 1229 	swap	a
+    000005FA E6 0F                 1230 	and	a, #0x0f
+    000005FC 5F                    1231 	ld	e, a
+    000005FD 16 00                 1232 	ld	d, #0x00
+    000005FF 21r45r00              1233 	ld	hl, #_gb8_v
+    00000602 19                    1234 	add	hl, de
+    00000603 7D                    1235 	ld	a, l
+    00000604 54                    1236 	ld	d, h
+    00000605 F8 02                 1237 	ldhl	sp,#2
+    00000607 22                    1238 	ld	(hl+), a
+    00000608 72                    1239 	ld	(hl), d
+    00000609 2B                    1240 	dec	hl
+    0000060A 5E                    1241 	ld	e, (hl)
+    0000060B 23                    1242 	inc	hl
+    0000060C 56                    1243 	ld	d, (hl)
+    0000060D 1A                    1244 	ld	a,(de)
+    0000060E 23                    1245 	inc	hl
+    0000060F 23                    1246 	inc	hl
+    00000610 B6                    1247 	or	a, (hl)
+    00000611 02                    1248 	ld	(bc), a
+                                   1249 ;src/main.c:527: break;
+    00000612 C3r80r0B              1250 	jp	00171$
+                                   1251 ;src/main.c:528: case GB8_INSTR_ARITH_AND_VX_VY:
+    00000615                       1252 00121$:
+                                   1253 ;src/main.c:529: gb8_v[_instr_hi & 0x0F] &= gb8_v[_instr_lo >> 4];
+    00000615 F8 0A                 1254 	ldhl	sp,#10
+    00000617 4E                    1255 	ld	c, (hl)
+    00000618 06 00                 1256 	ld	b, #0x00
+    0000061A 79                    1257 	ld	a, c
+    0000061B E6 0F                 1258 	and	a, #0x0f
+    0000061D 4F                    1259 	ld	c, a
+    0000061E 06 00                 1260 	ld	b, #0x00
+    00000620 21r45r00              1261 	ld	hl, #_gb8_v
+    00000623 09                    1262 	add	hl, bc
+    00000624 4D                    1263 	ld	c, l
+    00000625 44                    1264 	ld	b, h
+    00000626 0A                    1265 	ld	a, (bc)
+    00000627 F8 02                 1266 	ldhl	sp,#2
+    00000629 77                    1267 	ld	(hl), a
+    0000062A F8 0B                 1268 	ldhl	sp,#11
+    0000062C 7E                    1269 	ld	a, (hl)
+    0000062D CB 37                 1270 	swap	a
+    0000062F E6 0F                 1271 	and	a, #0x0f
+    00000631 5F                    1272 	ld	e, a
+    00000632 16 00                 1273 	ld	d, #0x00
+    00000634 21r45r00              1274 	ld	hl, #_gb8_v
+    00000637 19                    1275 	add	hl, de
+    00000638 7D                    1276 	ld	a, l
+    00000639 54                    1277 	ld	d, h
+    0000063A F8 05                 1278 	ldhl	sp,#5
+    0000063C 22                    1279 	ld	(hl+), a
+    0000063D 72                    1280 	ld	(hl), d
+    0000063E 2B                    1281 	dec	hl
+    0000063F 5E                    1282 	ld	e, (hl)
+    00000640 23                    1283 	inc	hl
+    00000641 56                    1284 	ld	d, (hl)
+    00000642 1A                    1285 	ld	a,(de)
+    00000643 F8 02                 1286 	ldhl	sp,#2
+    00000645 A6                    1287 	and	a, (hl)
+    00000646 02                    1288 	ld	(bc), a
+                                   1289 ;src/main.c:530: break;
+    00000647 C3r80r0B              1290 	jp	00171$
+                                   1291 ;src/main.c:531: case GB8_INSTR_ARITH_XOR_VX_VY:
+    0000064A                       1292 00122$:
+                                   1293 ;src/main.c:532: gb8_v[_instr_hi & 0x0F] ^= gb8_v[_instr_lo >> 4];
+    0000064A F8 0A                 1294 	ldhl	sp,#10
+    0000064C 4E                    1295 	ld	c, (hl)
+    0000064D 06 00                 1296 	ld	b, #0x00
+    0000064F 79                    1297 	ld	a, c
+    00000650 E6 0F                 1298 	and	a, #0x0f
+    00000652 4F                    1299 	ld	c, a
+    00000653 06 00                 1300 	ld	b, #0x00
+    00000655 21r45r00              1301 	ld	hl, #_gb8_v
+    00000658 09                    1302 	add	hl, bc
+    00000659 4D                    1303 	ld	c, l
+    0000065A 44                    1304 	ld	b, h
+    0000065B 0A                    1305 	ld	a, (bc)
+    0000065C F8 02                 1306 	ldhl	sp,#2
+    0000065E 77                    1307 	ld	(hl), a
+    0000065F F8 0B                 1308 	ldhl	sp,#11
+    00000661 7E                    1309 	ld	a, (hl)
+    00000662 CB 37                 1310 	swap	a
+    00000664 E6 0F                 1311 	and	a, #0x0f
+    00000666 5F                    1312 	ld	e, a
+    00000667 16 00                 1313 	ld	d, #0x00
+    00000669 21r45r00              1314 	ld	hl, #_gb8_v
+    0000066C 19                    1315 	add	hl, de
+    0000066D 7D                    1316 	ld	a, l
+    0000066E 54                    1317 	ld	d, h
+    0000066F F8 05                 1318 	ldhl	sp,#5
+    00000671 22                    1319 	ld	(hl+), a
+    00000672 72                    1320 	ld	(hl), d
+    00000673 2B                    1321 	dec	hl
+    00000674 5E                    1322 	ld	e, (hl)
+    00000675 23                    1323 	inc	hl
+    00000676 56                    1324 	ld	d, (hl)
+    00000677 1A                    1325 	ld	a,(de)
+    00000678 F8 02                 1326 	ldhl	sp,#2
+    0000067A AE                    1327 	xor	a, (hl)
+    0000067B 02                    1328 	ld	(bc), a
+                                   1329 ;src/main.c:533: break;
+    0000067C C3r80r0B              1330 	jp	00171$
+                                   1331 ;src/main.c:534: case GB8_INSTR_ARITH_ADD_VX_VY:
+    0000067F                       1332 00123$:
+                                   1333 ;src/main.c:535: gb8_v[0xF] = (((uint16_t)gb8_v[_instr_hi & 0x0F] + gb8_v[_instr_lo >> 4]) > 0x100) ? 1 : 0;
+    0000067F F8 0A                 1334 	ldhl	sp,#10
+    00000681 4E                    1335 	ld	c, (hl)
+    00000682 06 00                 1336 	ld	b, #0x00
+    00000684 79                    1337 	ld	a, c
+    00000685 E6 0F                 1338 	and	a, #0x0f
+    00000687 4F                    1339 	ld	c, a
+    00000688 06 00                 1340 	ld	b, #0x00
+    0000068A 21r45r00              1341 	ld	hl, #_gb8_v
+    0000068D 09                    1342 	add	hl, bc
+    0000068E 7D                    1343 	ld	a, l
+    0000068F 54                    1344 	ld	d, h
+    00000690 F8 02                 1345 	ldhl	sp,#2
+    00000692 22                    1346 	ld	(hl+), a
+    00000693 72                    1347 	ld	(hl), d
+    00000694 2B                    1348 	dec	hl
+    00000695 5E                    1349 	ld	e, (hl)
+    00000696 23                    1350 	inc	hl
+    00000697 56                    1351 	ld	d, (hl)
+    00000698 1A                    1352 	ld	a,(de)
+    00000699 23                    1353 	inc	hl
+    0000069A 23                    1354 	inc	hl
+    0000069B 22                    1355 	ld	(hl+), a
+    0000069C 36 00                 1356 	ld	(hl), #0x00
+    0000069E F8 0B                 1357 	ldhl	sp,#11
+    000006A0 7E                    1358 	ld	a, (hl)
+    000006A1 CB 37                 1359 	swap	a
+    000006A3 E6 0F                 1360 	and	a, #0x0f
+    000006A5 5F                    1361 	ld	e, a
+    000006A6 16 00                 1362 	ld	d, #0x00
+    000006A8 21r45r00              1363 	ld	hl, #_gb8_v
+    000006AB 19                    1364 	add	hl, de
+    000006AC 33                    1365 	inc	sp
+    000006AD 33                    1366 	inc	sp
+    000006AE E5                    1367 	push	hl
+    000006AF D1                    1368 	pop	de
+    000006B0 D5                    1369 	push	de
+    000006B1 1A                    1370 	ld	a,(de)
+    000006B2 4F                    1371 	ld	c, a
+    000006B3 06 00                 1372 	ld	b, #0x00
+    000006B5 F8 05                 1373 	ldhl	sp,#5
+    000006B7 2A                    1374 	ld	a, (hl+)
+    000006B8 66                    1375 	ld	h, (hl)
+    000006B9 6F                    1376 	ld	l, a
+    000006BA 09                    1377 	add	hl, bc
+    000006BB 4D                    1378 	ld	c, l
+    000006BC 44                    1379 	ld	b, h
+    000006BD AF                    1380 	xor	a, a
+    000006BE B9                    1381 	cp	a, c
+    000006BF 3E 01                 1382 	ld	a, #0x01
+    000006C1 98                    1383 	sbc	a, b
+    000006C2 30 05                 1384 	jr	NC,00173$
+    000006C4 01 01 00              1385 	ld	bc, #0x0001
+    000006C7 18 03                 1386 	jr	00174$
+    000006C9                       1387 00173$:
+    000006C9 01 00 00              1388 	ld	bc, #0x0000
+    000006CC                       1389 00174$:
+    000006CC 21r54r00              1390 	ld	hl, #(_gb8_v + 0x000f)
+    000006CF 71                    1391 	ld	(hl), c
+                                   1392 ;src/main.c:536: gb8_v[_instr_hi & 0x0F] += gb8_v[_instr_lo >> 4];
+    000006D0 F8 02                 1393 	ldhl	sp,#(3 - 1)
+    000006D2 5E                    1394 	ld	e, (hl)
+    000006D3 23                    1395 	inc	hl
+    000006D4 56                    1396 	ld	d, (hl)
+    000006D5 1A                    1397 	ld	a,(de)
+    000006D6 4F                    1398 	ld	c, a
+    000006D7 D1                    1399 	pop	de
+    000006D8 D5                    1400 	push	de
+    000006D9 1A                    1401 	ld	a,(de)
+    000006DA 81                    1402 	add	a, c
+    000006DB 4F                    1403 	ld	c, a
+    000006DC 2B                    1404 	dec	hl
+    000006DD 2A                    1405 	ld	a, (hl+)
+    000006DE 66                    1406 	ld	h, (hl)
+    000006DF 6F                    1407 	ld	l, a
+    000006E0 71                    1408 	ld	(hl), c
+                                   1409 ;src/main.c:537: break;
+    000006E1 C3r80r0B              1410 	jp	00171$
+                                   1411 ;src/main.c:538: case GB8_INSTR_ARITH_SUB_VX_VY:
+    000006E4                       1412 00124$:
+                                   1413 ;src/main.c:539: gb8_v[0xF] = (((int16_t)gb8_v[_instr_hi & 0x0F] - gb8_v[_instr_lo >> 4]) < 0) ? 0 : 1;
+    000006E4 F8 0A                 1414 	ldhl	sp,#10
+    000006E6 4E                    1415 	ld	c, (hl)
+    000006E7 06 00                 1416 	ld	b, #0x00
+    000006E9 79                    1417 	ld	a, c
+    000006EA E6 0F                 1418 	and	a, #0x0f
+    000006EC 4F                    1419 	ld	c, a
+    000006ED 06 00                 1420 	ld	b, #0x00
+    000006EF 21r45r00              1421 	ld	hl, #_gb8_v
+    000006F2 09                    1422 	add	hl, bc
+    000006F3 33                    1423 	inc	sp
+    000006F4 33                    1424 	inc	sp
+    000006F5 E5                    1425 	push	hl
+    000006F6 D1                    1426 	pop	de
+    000006F7 D5                    1427 	push	de
+    000006F8 1A                    1428 	ld	a,(de)
+    000006F9 4F                    1429 	ld	c, a
+    000006FA 06 00                 1430 	ld	b, #0x00
+    000006FC F8 0B                 1431 	ldhl	sp,#11
+    000006FE 7E                    1432 	ld	a, (hl)
+    000006FF CB 37                 1433 	swap	a
+    00000701 E6 0F                 1434 	and	a, #0x0f
+    00000703 5F                    1435 	ld	e, a
+    00000704 16 00                 1436 	ld	d, #0x00
+    00000706 21r45r00              1437 	ld	hl, #_gb8_v
+    00000709 19                    1438 	add	hl, de
+    0000070A 7D                    1439 	ld	a, l
+    0000070B 54                    1440 	ld	d, h
+    0000070C F8 02                 1441 	ldhl	sp,#2
+    0000070E 22                    1442 	ld	(hl+), a
+    0000070F 72                    1443 	ld	(hl), d
+    00000710 2B                    1444 	dec	hl
+    00000711 5E                    1445 	ld	e, (hl)
+    00000712 23                    1446 	inc	hl
+    00000713 56                    1447 	ld	d, (hl)
+    00000714 1A                    1448 	ld	a,(de)
+    00000715 23                    1449 	inc	hl
+    00000716 23                    1450 	inc	hl
+    00000717 22                    1451 	ld	(hl+), a
+    00000718 36 00                 1452 	ld	(hl), #0x00
+    0000071A 2B                    1453 	dec	hl
+    0000071B 5E                    1454 	ld	e, (hl)
+    0000071C 23                    1455 	inc	hl
+    0000071D 56                    1456 	ld	d, (hl)
+    0000071E 79                    1457 	ld	a, c
+    0000071F 93                    1458 	sub	a, e
+    00000720 5F                    1459 	ld	e, a
+    00000721 78                    1460 	ld	a, b
+    00000722 9A                    1461 	sbc	a, d
+    00000723 47                    1462 	ld	b, a
+    00000724 4B                    1463 	ld	c, e
+    00000725 CB 78                 1464 	bit	7, b
+    00000727 28 05                 1465 	jr	Z,00175$
+    00000729 01 00 00              1466 	ld	bc, #0x0000
+    0000072C 18 03                 1467 	jr	00176$
+    0000072E                       1468 00175$:
+    0000072E 01 01 00              1469 	ld	bc, #0x0001
+    00000731                       1470 00176$:
+    00000731 21r54r00              1471 	ld	hl, #(_gb8_v + 0x000f)
+    00000734 71                    1472 	ld	(hl), c
+                                   1473 ;src/main.c:540: gb8_v[_instr_hi & 0x0F] -= gb8_v[_instr_lo >> 4];
+    00000735 D1                    1474 	pop	de
+    00000736 D5                    1475 	push	de
+    00000737 1A                    1476 	ld	a,(de)
+    00000738 F8 02                 1477 	ldhl	sp,#(3 - 1)
+    0000073A 5E                    1478 	ld	e, (hl)
+    0000073B 23                    1479 	inc	hl
+    0000073C 56                    1480 	ld	d, (hl)
+    0000073D F5                    1481 	push	af
+    0000073E 1A                    1482 	ld	a,(de)
+    0000073F 4F                    1483 	ld	c, a
+    00000740 F1                    1484 	pop	af
+    00000741 91                    1485 	sub	a, c
+    00000742 4F                    1486 	ld	c, a
+    00000743 E1                    1487 	pop	hl
+    00000744 E5                    1488 	push	hl
+    00000745 71                    1489 	ld	(hl), c
+                                   1490 ;src/main.c:541: break;
+    00000746 C3r80r0B              1491 	jp	00171$
+                                   1492 ;src/main.c:542: case GB8_INSTR_ARITH_SHR_VX_VY:
+    00000749                       1493 00125$:
+                                   1494 ;src/main.c:543: gb8_v[0xF] = gb8_v[_instr_lo >> 4] & 0x01;
+    00000749 01r54r00              1495 	ld	bc, #_gb8_v + 15
+    0000074C F8 0B                 1496 	ldhl	sp,#11
+    0000074E 7E                    1497 	ld	a, (hl)
+    0000074F CB 37                 1498 	swap	a
+    00000751 E6 0F                 1499 	and	a, #0x0f
+    00000753 5F                    1500 	ld	e, a
+    00000754 16 00                 1501 	ld	d, #0x00
+    00000756 21r45r00              1502 	ld	hl, #_gb8_v
+    00000759 19                    1503 	add	hl, de
+    0000075A 33                    1504 	inc	sp
+    0000075B 33                    1505 	inc	sp
+    0000075C E5                    1506 	push	hl
+    0000075D D1                    1507 	pop	de
+    0000075E D5                    1508 	push	de
+    0000075F 1A                    1509 	ld	a,(de)
+    00000760 E6 01                 1510 	and	a, #0x01
+    00000762 02                    1511 	ld	(bc), a
+                                   1512 ;src/main.c:544: gb8_v[_instr_hi & 0x0F] = gb8_v[_instr_lo >> 4] >> 1;
+    00000763 F8 0A                 1513 	ldhl	sp,#10
+    00000765 4E                    1514 	ld	c, (hl)
+    00000766 06 00                 1515 	ld	b, #0x00
+    00000768 79                    1516 	ld	a, c
+    00000769 E6 0F                 1517 	and	a, #0x0f
+    0000076B 4F                    1518 	ld	c, a
+    0000076C 06 00                 1519 	ld	b, #0x00
+    0000076E 21r45r00              1520 	ld	hl, #_gb8_v
+    00000771 09                    1521 	add	hl, bc
+    00000772 4D                    1522 	ld	c, l
+    00000773 44                    1523 	ld	b, h
+    00000774 D1                    1524 	pop	de
+    00000775 D5                    1525 	push	de
+    00000776 1A                    1526 	ld	a,(de)
+    00000777 CB 3F                 1527 	srl	a
+    00000779 02                    1528 	ld	(bc), a
+                                   1529 ;src/main.c:545: break;
+    0000077A C3r80r0B              1530 	jp	00171$
+                                   1531 ;src/main.c:546: case GB8_INSTR_ARITH_SUB_VY_VX:
+    0000077D                       1532 00126$:
+                                   1533 ;src/main.c:547: gb8_v[0xF] = (((int16_t)gb8_v[_instr_lo >> 4] - gb8_v[_instr_hi & 0x0F]) < 0) ? 0 : 1;
+    0000077D F8 0B                 1534 	ldhl	sp,#11
+    0000077F 7E                    1535 	ld	a, (hl)
+    00000780 CB 37                 1536 	swap	a
+    00000782 E6 0F                 1537 	and	a, #0x0f
+    00000784 5F                    1538 	ld	e, a
+    00000785 16 00                 1539 	ld	d, #0x00
+    00000787 21r45r00              1540 	ld	hl, #_gb8_v
+    0000078A 19                    1541 	add	hl, de
+    0000078B 33                    1542 	inc	sp
+    0000078C 33                    1543 	inc	sp
+    0000078D E5                    1544 	push	hl
+    0000078E D1                    1545 	pop	de
+    0000078F D5                    1546 	push	de
+    00000790 1A                    1547 	ld	a,(de)
+    00000791 F8 02                 1548 	ldhl	sp,#2
+    00000793 22                    1549 	ld	(hl+), a
+    00000794 36 00                 1550 	ld	(hl), #0x00
+    00000796 F8 0A                 1551 	ldhl	sp,#10
+    00000798 4E                    1552 	ld	c, (hl)
+    00000799 06 00                 1553 	ld	b, #0x00
+    0000079B 79                    1554 	ld	a, c
+    0000079C E6 0F                 1555 	and	a, #0x0f
+    0000079E 4F                    1556 	ld	c, a
+    0000079F 06 00                 1557 	ld	b, #0x00
+    000007A1 21r45r00              1558 	ld	hl, #_gb8_v
+    000007A4 09                    1559 	add	hl, bc
+    000007A5 7D                    1560 	ld	a, l
+    000007A6 54                    1561 	ld	d, h
+    000007A7 F8 05                 1562 	ldhl	sp,#5
+    000007A9 22                    1563 	ld	(hl+), a
+    000007AA 72                    1564 	ld	(hl), d
+    000007AB 2B                    1565 	dec	hl
+    000007AC 5E                    1566 	ld	e, (hl)
+    000007AD 23                    1567 	inc	hl
+    000007AE 56                    1568 	ld	d, (hl)
+    000007AF 1A                    1569 	ld	a,(de)
+    000007B0 4F                    1570 	ld	c, a
+    000007B1 06 00                 1571 	ld	b, #0x00
+    000007B3 F8 02                 1572 	ldhl	sp,#(3 - 1)
+    000007B5 5E                    1573 	ld	e, (hl)
+    000007B6 23                    1574 	inc	hl
+    000007B7 56                    1575 	ld	d, (hl)
+    000007B8 7B                    1576 	ld	a, e
+    000007B9 91                    1577 	sub	a, c
+    000007BA 5F                    1578 	ld	e, a
+    000007BB 7A                    1579 	ld	a, d
+    000007BC 98                    1580 	sbc	a, b
+    000007BD 47                    1581 	ld	b, a
+    000007BE 4B                    1582 	ld	c, e
+    000007BF CB 78                 1583 	bit	7, b
+    000007C1 28 05                 1584 	jr	Z,00177$
+    000007C3 01 00 00              1585 	ld	bc, #0x0000
+    000007C6 18 03                 1586 	jr	00178$
+    000007C8                       1587 00177$:
+    000007C8 01 01 00              1588 	ld	bc, #0x0001
+    000007CB                       1589 00178$:
+    000007CB 21r54r00              1590 	ld	hl, #(_gb8_v + 0x000f)
+    000007CE 71                    1591 	ld	(hl), c
+                                   1592 ;src/main.c:548: gb8_v[_instr_hi & 0x0F] = gb8_v[_instr_lo >> 4] - gb8_v[_instr_hi & 0x0F];
+    000007CF D1                    1593 	pop	de
+    000007D0 D5                    1594 	push	de
+    000007D1 1A                    1595 	ld	a,(de)
+    000007D2 F8 05                 1596 	ldhl	sp,#(6 - 1)
+    000007D4 5E                    1597 	ld	e, (hl)
+    000007D5 23                    1598 	inc	hl
+    000007D6 56                    1599 	ld	d, (hl)
+    000007D7 F5                    1600 	push	af
+    000007D8 1A                    1601 	ld	a,(de)
+    000007D9 4F                    1602 	ld	c, a
+    000007DA F1                    1603 	pop	af
+    000007DB 91                    1604 	sub	a, c
+    000007DC 4F                    1605 	ld	c, a
+    000007DD 2B                    1606 	dec	hl
+    000007DE 2A                    1607 	ld	a, (hl+)
+    000007DF 66                    1608 	ld	h, (hl)
+    000007E0 6F                    1609 	ld	l, a
+    000007E1 71                    1610 	ld	(hl), c
+                                   1611 ;src/main.c:549: break;
+    000007E2 C3r80r0B              1612 	jp	00171$
+                                   1613 ;src/main.c:550: case GB8_INSTR_ARITH_SHL_VX_VY:
+    000007E5                       1614 00127$:
+                                   1615 ;src/main.c:551: gb8_v[0xF] = gb8_v[_instr_lo >> 4] >> 7;
+    000007E5 01r54r00              1616 	ld	bc, #_gb8_v + 15
+    000007E8 F8 0B                 1617 	ldhl	sp,#11
+    000007EA 7E                    1618 	ld	a, (hl)
+    000007EB CB 37                 1619 	swap	a
+    000007ED E6 0F                 1620 	and	a, #0x0f
+    000007EF 5F                    1621 	ld	e, a
+    000007F0 16 00                 1622 	ld	d, #0x00
+    000007F2 21r45r00              1623 	ld	hl, #_gb8_v
+    000007F5 19                    1624 	add	hl, de
+    000007F6 33                    1625 	inc	sp
+    000007F7 33                    1626 	inc	sp
+    000007F8 E5                    1627 	push	hl
+    000007F9 D1                    1628 	pop	de
+    000007FA D5                    1629 	push	de
+    000007FB 1A                    1630 	ld	a,(de)
+    000007FC 07                    1631 	rlca
+    000007FD E6 01                 1632 	and	a, #0x01
+    000007FF 02                    1633 	ld	(bc), a
+                                   1634 ;src/main.c:552: gb8_v[_instr_hi & 0x0F] = gb8_v[_instr_lo >> 4] << 1;
+    00000800 F8 0A                 1635 	ldhl	sp,#10
+    00000802 4E                    1636 	ld	c, (hl)
+    00000803 06 00                 1637 	ld	b, #0x00
+    00000805 79                    1638 	ld	a, c
+    00000806 E6 0F                 1639 	and	a, #0x0f
+    00000808 4F                    1640 	ld	c, a
+    00000809 06 00                 1641 	ld	b, #0x00
+    0000080B 21r45r00              1642 	ld	hl, #_gb8_v
+    0000080E 09                    1643 	add	hl, bc
+    0000080F 4D                    1644 	ld	c, l
+    00000810 44                    1645 	ld	b, h
+    00000811 D1                    1646 	pop	de
+    00000812 D5                    1647 	push	de
+    00000813 1A                    1648 	ld	a,(de)
+    00000814 87                    1649 	add	a, a
+    00000815 02                    1650 	ld	(bc), a
+                                   1651 ;src/main.c:555: break;
+    00000816 C3r80r0B              1652 	jp	00171$
+                                   1653 ;src/main.c:556: case GB8_INSTR_SKIP_NE_VX_VY:
+    00000819                       1654 00129$:
+                                   1655 ;src/main.c:557: if(gb8_v[_instr_hi & 0x0F] != gb8_v[_instr_lo >> 4]) gb8_pc += 2;
+    00000819 F8 0A                 1656 	ldhl	sp,#10
+    0000081B 4E                    1657 	ld	c, (hl)
+    0000081C 06 00                 1658 	ld	b, #0x00
+    0000081E 79                    1659 	ld	a, c
+    0000081F E6 0F                 1660 	and	a, #0x0f
+    00000821 4F                    1661 	ld	c, a
+    00000822 06 00                 1662 	ld	b, #0x00
+    00000824 21r45r00              1663 	ld	hl, #_gb8_v
+    00000827 09                    1664 	add	hl, bc
+    00000828 4D                    1665 	ld	c, l
+    00000829 44                    1666 	ld	b, h
+    0000082A 0A                    1667 	ld	a, (bc)
+    0000082B 4F                    1668 	ld	c, a
+    0000082C F8 0B                 1669 	ldhl	sp,#11
+    0000082E 7E                    1670 	ld	a, (hl)
+    0000082F CB 37                 1671 	swap	a
+    00000831 E6 0F                 1672 	and	a, #0x0f
+    00000833 C6r45                 1673 	add	a, #<(_gb8_v)
+    00000835 47                    1674 	ld	b, a
+    00000836 3E 00                 1675 	ld	a, #0x00
+    00000838 CEs00                 1676 	adc	a, #>(_gb8_v)
+    0000083A 58                    1677 	ld	e, b
+    0000083B 57                    1678 	ld	d, a
+    0000083C 1A                    1679 	ld	a,(de)
+    0000083D 91                    1680 	sub	a, c
+    0000083E CAr80r0B              1681 	jp	Z,00171$
+    00000841 21r02r00              1682 	ld	hl, #_gb8_pc
+    00000844 7E                    1683 	ld	a, (hl)
+    00000845 C6 02                 1684 	add	a, #0x02
+    00000847 22                    1685 	ld	(hl+), a
+    00000848 7E                    1686 	ld	a, (hl)
+    00000849 CE 00                 1687 	adc	a, #0x00
+    0000084B 77                    1688 	ld	(hl), a
+                                   1689 ;src/main.c:558: break;
+    0000084C C3r80r0B              1690 	jp	00171$
+                                   1691 ;src/main.c:559: case GB8_INSTR_LOAD_I_N:
+    0000084F                       1692 00132$:
+                                   1693 ;src/main.c:560: gb8_i = ((_instr_hi & 0x0F) << 8) | _instr_lo;
+    0000084F F8 0A                 1694 	ldhl	sp,#10
+    00000851 5E                    1695 	ld	e, (hl)
+    00000852 16 00                 1696 	ld	d, #0x00
+    00000854 7B                    1697 	ld	a, e
+    00000855 E6 0F                 1698 	and	a, #0x0f
+    00000857 47                    1699 	ld	b, a
+    00000858 0E 00                 1700 	ld	c, #0x00
+    0000085A 0E 00                 1701 	ld	c, #0x00
+    0000085C 23                    1702 	inc	hl
+    0000085D 5E                    1703 	ld	e, (hl)
+    0000085E 16 00                 1704 	ld	d, #0x00
+    00000860 79                    1705 	ld	a, c
+    00000861 B3                    1706 	or	a, e
+    00000862 21r56r00              1707 	ld	hl, #_gb8_i
+    00000865 77                    1708 	ld	(hl), a
+    00000866 78                    1709 	ld	a, b
+    00000867 B2                    1710 	or	a, d
+    00000868 23                    1711 	inc	hl
+    00000869 77                    1712 	ld	(hl), a
+                                   1713 ;src/main.c:561: break;
+    0000086A C3r80r0B              1714 	jp	00171$
+                                   1715 ;src/main.c:562: case GB8_INSTR_JMP_N_V0:
+    0000086D                       1716 00133$:
+                                   1717 ;src/main.c:563: gb8_pc = (((_instr_hi & 0x0F) << 8) | _instr_lo) + gb8_v[0];
+    0000086D F8 0A                 1718 	ldhl	sp,#10
+    0000086F 5E                    1719 	ld	e, (hl)
+    00000870 16 00                 1720 	ld	d, #0x00
+    00000872 7B                    1721 	ld	a, e
+    00000873 E6 0F                 1722 	and	a, #0x0f
+    00000875 47                    1723 	ld	b, a
+    00000876 0E 00                 1724 	ld	c, #0x00
+    00000878 0E 00                 1725 	ld	c, #0x00
+    0000087A 23                    1726 	inc	hl
+    0000087B 5E                    1727 	ld	e, (hl)
+    0000087C 16 00                 1728 	ld	d, #0x00
+    0000087E 79                    1729 	ld	a, c
+    0000087F B3                    1730 	or	a, e
+    00000880 4F                    1731 	ld	c, a
+    00000881 78                    1732 	ld	a, b
+    00000882 B2                    1733 	or	a, d
+    00000883 47                    1734 	ld	b, a
+    00000884 FAr45r00              1735 	ld	a, (#_gb8_v + 0)
+    00000887 F8 00                 1736 	ldhl	sp,#0
+    00000889 22                    1737 	ld	(hl+), a
+    0000088A 36 00                 1738 	ld	(hl), #0x00
+    0000088C E1                    1739 	pop	hl
+    0000088D E5                    1740 	push	hl
+    0000088E 09                    1741 	add	hl, bc
+    0000088F 7D                    1742 	ld	a, l
+    00000890 54                    1743 	ld	d, h
+    00000891 21r02r00              1744 	ld	hl, #_gb8_pc
+    00000894 22                    1745 	ld	(hl+), a
+    00000895 72                    1746 	ld	(hl), d
+                                   1747 ;src/main.c:564: break;
+    00000896 C3r80r0B              1748 	jp	00171$
+                                   1749 ;src/main.c:565: case GB8_INSTR_RND_VX_N:
+    00000899                       1750 00134$:
+                                   1751 ;src/main.c:566: gb8_v[_instr_hi & 0x0F] = gb8_rnd() & _instr_lo;
+    00000899 F8 0A                 1752 	ldhl	sp,#10
+    0000089B 4E                    1753 	ld	c, (hl)
+    0000089C 06 00                 1754 	ld	b, #0x00
+    0000089E 79                    1755 	ld	a, c
+    0000089F E6 0F                 1756 	and	a, #0x0f
+    000008A1 4F                    1757 	ld	c, a
+    000008A2 06 00                 1758 	ld	b, #0x00
+    000008A4 21r45r00              1759 	ld	hl, #_gb8_v
+    000008A7 09                    1760 	add	hl, bc
+    000008A8 4D                    1761 	ld	c, l
+    000008A9 44                    1762 	ld	b, h
+    000008AA C5                    1763 	push	bc
+    000008AB CDr98r03              1764 	call	_gb8_rnd
+    000008AE 7B                    1765 	ld	a, e
+    000008AF C1                    1766 	pop	bc
+    000008B0 F8 0B                 1767 	ldhl	sp,#11
+    000008B2 A6                    1768 	and	a, (hl)
+    000008B3 02                    1769 	ld	(bc), a
+                                   1770 ;src/main.c:567: break;
+    000008B4 C3r80r0B              1771 	jp	00171$
+                                   1772 ;src/main.c:568: case GB8_INSTR_DRAW_SPR:
+    000008B7                       1773 00135$:
+                                   1774 ;src/main.c:569: gb8_draw_sprite(gb8_v[_instr_hi & 0x0F], gb8_v[_instr_lo >> 4], _instr_lo & 0x0F);
+    000008B7 F8 0B                 1775 	ldhl	sp,#11
+    000008B9 7E                    1776 	ld	a, (hl)
+    000008BA E6 0F                 1777 	and	a, #0x0f
+    000008BC F8 00                 1778 	ldhl	sp,#0
+    000008BE 77                    1779 	ld	(hl), a
+    000008BF F8 0B                 1780 	ldhl	sp,#11
+    000008C1 7E                    1781 	ld	a, (hl)
+    000008C2 CB 37                 1782 	swap	a
+    000008C4 E6 0F                 1783 	and	a, #0x0f
+    000008C6 C6r45                 1784 	add	a, #<(_gb8_v)
+    000008C8 4F                    1785 	ld	c, a
+    000008C9 3E 00                 1786 	ld	a, #0x00
+    000008CB CEs00                 1787 	adc	a, #>(_gb8_v)
+    000008CD 47                    1788 	ld	b, a
+    000008CE 0A                    1789 	ld	a, (bc)
+    000008CF F8 02                 1790 	ldhl	sp,#2
+    000008D1 77                    1791 	ld	(hl), a
+    000008D2 F8 0A                 1792 	ldhl	sp,#10
+    000008D4 4E                    1793 	ld	c, (hl)
+    000008D5 06 00                 1794 	ld	b, #0x00
+    000008D7 79                    1795 	ld	a, c
+    000008D8 E6 0F                 1796 	and	a, #0x0f
+    000008DA 4F                    1797 	ld	c, a
+    000008DB 06 00                 1798 	ld	b, #0x00
+    000008DD 21r45r00              1799 	ld	hl, #_gb8_v
+    000008E0 09                    1800 	add	hl, bc
+    000008E1 4D                    1801 	ld	c, l
+    000008E2 44                    1802 	ld	b, h
+    000008E3 0A                    1803 	ld	a, (bc)
+    000008E4 47                    1804 	ld	b, a
+    000008E5 F8 00                 1805 	ldhl	sp,#0
+    000008E7 7E                    1806 	ld	a, (hl)
+    000008E8 F5                    1807 	push	af
+    000008E9 33                    1808 	inc	sp
+    000008EA 23                    1809 	inc	hl
+    000008EB 23                    1810 	inc	hl
+    000008EC 7E                    1811 	ld	a, (hl)
+    000008ED F5                    1812 	push	af
+    000008EE 33                    1813 	inc	sp
+    000008EF C5                    1814 	push	bc
+    000008F0 33                    1815 	inc	sp
+    000008F1 CDr59r02              1816 	call	_gb8_draw_sprite
+    000008F4 E8 03                 1817 	add	sp, #3
+                                   1818 ;src/main.c:570: break;
+    000008F6 C3r80r0B              1819 	jp	00171$
+                                   1820 ;src/main.c:571: case GB8_INSTR_SKIP_KEY:
+    000008F9                       1821 00136$:
+                                   1822 ;src/main.c:572: switch(_instr_lo){
+    000008F9 F8 0B                 1823 	ldhl	sp,#11
+    000008FB 7E                    1824 	ld	a, (hl)
+    000008FC D6 9E                 1825 	sub	a, #0x9e
+    000008FE 28 0A                 1826 	jr	Z,00137$
+    00000900 F8 0B                 1827 	ldhl	sp,#11
+    00000902 7E                    1828 	ld	a, (hl)
+    00000903 D6 A1                 1829 	sub	a, #0xa1
+    00000905 28 2E                 1830 	jr	Z,00140$
+    00000907 C3r80r0B              1831 	jp	00171$
+                                   1832 ;src/main.c:573: case GB8_INSTR_SKIP_KEY_PRSD:
+    0000090A                       1833 00137$:
+                                   1834 ;src/main.c:574: if(gb8_get_key(gb8_v[_instr_hi & 0x0F])) gb8_pc += 2;
+    0000090A F8 0A                 1835 	ldhl	sp,#10
+    0000090C 4E                    1836 	ld	c, (hl)
+    0000090D 06 00                 1837 	ld	b, #0x00
+    0000090F 79                    1838 	ld	a, c
+    00000910 E6 0F                 1839 	and	a, #0x0f
+    00000912 4F                    1840 	ld	c, a
+    00000913 06 00                 1841 	ld	b, #0x00
+    00000915 21r45r00              1842 	ld	hl, #_gb8_v
+    00000918 09                    1843 	add	hl, bc
+    00000919 4D                    1844 	ld	c, l
+    0000091A 44                    1845 	ld	b, h
+    0000091B 0A                    1846 	ld	a, (bc)
+    0000091C F5                    1847 	push	af
+    0000091D 33                    1848 	inc	sp
+    0000091E CDr46r02              1849 	call	_gb8_get_key
+    00000921 33                    1850 	inc	sp
+    00000922 7B                    1851 	ld	a, e
+    00000923 B7                    1852 	or	a, a
+    00000924 CAr80r0B              1853 	jp	Z, 00171$
+    00000927 21r02r00              1854 	ld	hl, #_gb8_pc
+    0000092A 7E                    1855 	ld	a, (hl)
+    0000092B C6 02                 1856 	add	a, #0x02
+    0000092D 22                    1857 	ld	(hl+), a
+    0000092E 7E                    1858 	ld	a, (hl)
+    0000092F CE 00                 1859 	adc	a, #0x00
+    00000931 77                    1860 	ld	(hl), a
+                                   1861 ;src/main.c:575: break;
+    00000932 C3r80r0B              1862 	jp	00171$
+                                   1863 ;src/main.c:576: case GB8_INSTR_SKIP_KEY_NOT_PRSD:
+    00000935                       1864 00140$:
+                                   1865 ;src/main.c:577: if(!(gb8_get_key(gb8_v[_instr_hi & 0x0F]))) gb8_pc += 2;
+    00000935 F8 0A                 1866 	ldhl	sp,#10
+    00000937 4E                    1867 	ld	c, (hl)
+    00000938 06 00                 1868 	ld	b, #0x00
+    0000093A 79                    1869 	ld	a, c
+    0000093B E6 0F                 1870 	and	a, #0x0f
+    0000093D 4F                    1871 	ld	c, a
+    0000093E 06 00                 1872 	ld	b, #0x00
+    00000940 21r45r00              1873 	ld	hl, #_gb8_v
+    00000943 09                    1874 	add	hl, bc
+    00000944 4D                    1875 	ld	c, l
+    00000945 44                    1876 	ld	b, h
+    00000946 0A                    1877 	ld	a, (bc)
+    00000947 F5                    1878 	push	af
+    00000948 33                    1879 	inc	sp
+    00000949 CDr46r02              1880 	call	_gb8_get_key
+    0000094C 33                    1881 	inc	sp
+    0000094D 7B                    1882 	ld	a, e
+    0000094E B7                    1883 	or	a, a
+    0000094F C2r80r0B              1884 	jp	NZ, 00171$
+    00000952 21r02r00              1885 	ld	hl, #_gb8_pc
+    00000955 7E                    1886 	ld	a, (hl)
+    00000956 C6 02                 1887 	add	a, #0x02
+    00000958 22                    1888 	ld	(hl+), a
+    00000959 7E                    1889 	ld	a, (hl)
+    0000095A CE 00                 1890 	adc	a, #0x00
+    0000095C 77                    1891 	ld	(hl), a
+                                   1892 ;src/main.c:580: break;
+    0000095D C3r80r0B              1893 	jp	00171$
+                                   1894 ;src/main.c:581: case GB8_INSTR_SPEC2:
+    00000960                       1895 00144$:
+                                   1896 ;src/main.c:582: switch(_instr_lo){
+    00000960 F8 0B                 1897 	ldhl	sp,#11
+    00000962 7E                    1898 	ld	a, (hl)
+    00000963 D6 07                 1899 	sub	a, #0x07
+    00000965 CArABr09              1900 	jp	Z,00145$
+    00000968 F8 0B                 1901 	ldhl	sp,#11
+    0000096A 7E                    1902 	ld	a, (hl)
+    0000096B D6 0A                 1903 	sub	a, #0x0a
+    0000096D CArC4r09              1904 	jp	Z,00146$
+    00000970 F8 0B                 1905 	ldhl	sp,#11
+    00000972 7E                    1906 	ld	a, (hl)
+    00000973 D6 15                 1907 	sub	a, #0x15
+    00000975 CAr1Fr0A              1908 	jp	Z,00152$
+    00000978 F8 0B                 1909 	ldhl	sp,#11
+    0000097A 7E                    1910 	ld	a, (hl)
+    0000097B D6 18                 1911 	sub	a, #0x18
+    0000097D CAr38r0A              1912 	jp	Z,00153$
+    00000980 F8 0B                 1913 	ldhl	sp,#11
+    00000982 7E                    1914 	ld	a, (hl)
+    00000983 D6 1E                 1915 	sub	a, #0x1e
+    00000985 CAr51r0A              1916 	jp	Z,00154$
+    00000988 F8 0B                 1917 	ldhl	sp,#11
+    0000098A 7E                    1918 	ld	a, (hl)
+    0000098B D6 29                 1919 	sub	a, #0x29
+    0000098D CAr72r0A              1920 	jp	Z,00155$
+    00000990 F8 0B                 1921 	ldhl	sp,#11
+    00000992 7E                    1922 	ld	a, (hl)
+    00000993 D6 33                 1923 	sub	a, #0x33
+    00000995 CAr96r0A              1924 	jp	Z,00156$
+    00000998 F8 0B                 1925 	ldhl	sp,#11
+    0000099A 7E                    1926 	ld	a, (hl)
+    0000099B D6 55                 1927 	sub	a, #0x55
+    0000099D CArA4r0A              1928 	jp	Z,00215$
+    000009A0 F8 0B                 1929 	ldhl	sp,#11
+    000009A2 7E                    1930 	ld	a, (hl)
+    000009A3 D6 65                 1931 	sub	a, #0x65
+    000009A5 CAr13r0B              1932 	jp	Z,00217$
+    000009A8 C3r80r0B              1933 	jp	00171$
+                                   1934 ;src/main.c:583: case GB8_INSTR_SPEC2_LOAD_VX_DELAY:
+    000009AB                       1935 00145$:
+                                   1936 ;src/main.c:584: gb8_v[_instr_hi & 0x0F] = gb8_delay_timer;
+    000009AB F8 0A                 1937 	ldhl	sp,#10
+    000009AD 4E                    1938 	ld	c, (hl)
+    000009AE 06 00                 1939 	ld	b, #0x00
+    000009B0 79                    1940 	ld	a, c
+    000009B1 E6 0F                 1941 	and	a, #0x0f
+    000009B3 4F                    1942 	ld	c, a
+    000009B4 06 00                 1943 	ld	b, #0x00
+    000009B6 21r45r00              1944 	ld	hl, #_gb8_v
+    000009B9 09                    1945 	add	hl, bc
+    000009BA 4D                    1946 	ld	c, l
+    000009BB 44                    1947 	ld	b, h
+    000009BC 21r58r00              1948 	ld	hl, #_gb8_delay_timer
+    000009BF 7E                    1949 	ld	a, (hl)
+    000009C0 02                    1950 	ld	(bc), a
+                                   1951 ;src/main.c:585: break;
+    000009C1 C3r80r0B              1952 	jp	00171$
+                                   1953 ;src/main.c:586: case GB8_INSTR_SPEC2_WAIT_KEY_VX:
+    000009C4                       1954 00146$:
+                                   1955 ;src/main.c:587: {   uint8_t _key, _any_key_pressed = 0;
+    000009C4 F8 07                 1956 	ldhl	sp,#7
+    000009C6 36 00                 1957 	ld	(hl), #0x00
+                                   1958 ;src/main.c:588: for(_key = 0; _key < 16; _key++){
+    000009C8 F8 00                 1959 	ldhl	sp,#0
+    000009CA 36 00                 1960 	ld	(hl), #0x00
+    000009CC 06 00                 1961 	ld	b, #0x00
+    000009CE                       1962 00163$:
+                                   1963 ;src/main.c:589: _any_key_pressed |= gb8_get_key(_key);
+    000009CE C5                    1964 	push	bc
+    000009CF C5                    1965 	push	bc
+    000009D0 33                    1966 	inc	sp
+    000009D1 CDr46r02              1967 	call	_gb8_get_key
+    000009D4 33                    1968 	inc	sp
+    000009D5 7B                    1969 	ld	a, e
+    000009D6 C1                    1970 	pop	bc
+    000009D7 F8 07                 1971 	ldhl	sp,#7
+    000009D9 B6                    1972 	or	a, (hl)
+    000009DA 77                    1973 	ld	(hl), a
+                                   1974 ;src/main.c:590: if(gb8_get_key(_key)){
+    000009DB C5                    1975 	push	bc
+    000009DC C5                    1976 	push	bc
+    000009DD 33                    1977 	inc	sp
+    000009DE CDr46r02              1978 	call	_gb8_get_key
+    000009E1 33                    1979 	inc	sp
+    000009E2 C1                    1980 	pop	bc
+    000009E3 7B                    1981 	ld	a, e
+    000009E4 B7                    1982 	or	a, a
+    000009E5 28 17                 1983 	jr	Z,00164$
+                                   1984 ;src/main.c:591: gb8_v[_instr_hi & 0x0F] = _key;
+    000009E7 F8 0A                 1985 	ldhl	sp,#10
+    000009E9 4E                    1986 	ld	c, (hl)
+    000009EA 06 00                 1987 	ld	b, #0x00
+    000009EC 79                    1988 	ld	a, c
+    000009ED E6 0F                 1989 	and	a, #0x0f
+    000009EF 4F                    1990 	ld	c, a
+    000009F0 06 00                 1991 	ld	b, #0x00
+    000009F2 21r45r00              1992 	ld	hl, #_gb8_v
+    000009F5 09                    1993 	add	hl, bc
+    000009F6 4D                    1994 	ld	c, l
+    000009F7 44                    1995 	ld	b, h
+    000009F8 F8 00                 1996 	ldhl	sp,#0
+    000009FA 7E                    1997 	ld	a, (hl)
+    000009FB 02                    1998 	ld	(bc), a
+                                   1999 ;src/main.c:592: break;
+    000009FC 18 0A                 2000 	jr	00149$
+    000009FE                       2001 00164$:
+                                   2002 ;src/main.c:588: for(_key = 0; _key < 16; _key++){
+    000009FE 04                    2003 	inc	b
+    000009FF F8 00                 2004 	ldhl	sp,#0
+    00000A01 70                    2005 	ld	(hl), b
+    00000A02 78                    2006 	ld	a, b
+    00000A03 D6 10                 2007 	sub	a, #0x10
+    00000A05 DArCEr09              2008 	jp	C, 00163$
+    00000A08                       2009 00149$:
+                                   2010 ;src/main.c:595: if(!_any_key_pressed) gb8_pc -= 2;
+    00000A08 F8 07                 2011 	ldhl	sp,#7
+    00000A0A 7E                    2012 	ld	a, (hl)
+    00000A0B B7                    2013 	or	a, a
+    00000A0C C2r80r0B              2014 	jp	NZ, 00171$
+    00000A0F 21r03r00              2015 	ld	hl, #_gb8_pc + 1
+    00000A12 2B                    2016 	dec	hl
+    00000A13 5E                    2017 	ld	e, (hl)
+    00000A14 23                    2018 	inc	hl
+    00000A15 56                    2019 	ld	d, (hl)
+    00000A16 1B                    2020 	dec	de
+    00000A17 1B                    2021 	dec	de
+    00000A18 2B                    2022 	dec	hl
+    00000A19 73                    2023 	ld	(hl), e
+    00000A1A 23                    2024 	inc	hl
+    00000A1B 72                    2025 	ld	(hl), d
+                                   2026 ;src/main.c:597: break;
+    00000A1C C3r80r0B              2027 	jp	00171$
+                                   2028 ;src/main.c:598: case GB8_INSTR_SPEC2_LOAD_DELAY_VX:
+    00000A1F                       2029 00152$:
+                                   2030 ;src/main.c:599: gb8_delay_timer = gb8_v[_instr_hi & 0x0F];
+    00000A1F F8 0A                 2031 	ldhl	sp,#10
+    00000A21 4E                    2032 	ld	c, (hl)
+    00000A22 06 00                 2033 	ld	b, #0x00
+    00000A24 79                    2034 	ld	a, c
+    00000A25 E6 0F                 2035 	and	a, #0x0f
+    00000A27 4F                    2036 	ld	c, a
+    00000A28 06 00                 2037 	ld	b, #0x00
+    00000A2A 21r45r00              2038 	ld	hl, #_gb8_v
+    00000A2D 09                    2039 	add	hl, bc
+    00000A2E 4D                    2040 	ld	c, l
+    00000A2F 44                    2041 	ld	b, h
+    00000A30 0A                    2042 	ld	a, (bc)
+    00000A31 21r58r00              2043 	ld	hl, #_gb8_delay_timer
+    00000A34 77                    2044 	ld	(hl), a
+                                   2045 ;src/main.c:600: break;
+    00000A35 C3r80r0B              2046 	jp	00171$
+                                   2047 ;src/main.c:601: case GB8_INSTR_SPEC2_LOAD_SOUND_VX:
+    00000A38                       2048 00153$:
+                                   2049 ;src/main.c:602: gb8_sound_timer = gb8_v[_instr_hi & 0x0F];
+    00000A38 F8 0A                 2050 	ldhl	sp,#10
+    00000A3A 4E                    2051 	ld	c, (hl)
+    00000A3B 06 00                 2052 	ld	b, #0x00
+    00000A3D 79                    2053 	ld	a, c
+    00000A3E E6 0F                 2054 	and	a, #0x0f
+    00000A40 4F                    2055 	ld	c, a
+    00000A41 06 00                 2056 	ld	b, #0x00
+    00000A43 21r45r00              2057 	ld	hl, #_gb8_v
+    00000A46 09                    2058 	add	hl, bc
+    00000A47 4D                    2059 	ld	c, l
+    00000A48 44                    2060 	ld	b, h
+    00000A49 0A                    2061 	ld	a, (bc)
+    00000A4A 21r59r00              2062 	ld	hl, #_gb8_sound_timer
+    00000A4D 77                    2063 	ld	(hl), a
+                                   2064 ;src/main.c:603: break;
+    00000A4E C3r80r0B              2065 	jp	00171$
+                                   2066 ;src/main.c:604: case GB8_INSTR_SPEC2_ADD_I_VX:
+    00000A51                       2067 00154$:
+                                   2068 ;src/main.c:605: gb8_i += gb8_v[_instr_hi & 0x0F];
+    00000A51 F8 0A                 2069 	ldhl	sp,#10
+    00000A53 4E                    2070 	ld	c, (hl)
+    00000A54 06 00                 2071 	ld	b, #0x00
+    00000A56 79                    2072 	ld	a, c
+    00000A57 E6 0F                 2073 	and	a, #0x0f
+    00000A59 4F                    2074 	ld	c, a
+    00000A5A 06 00                 2075 	ld	b, #0x00
+    00000A5C 21r45r00              2076 	ld	hl, #_gb8_v
+    00000A5F 09                    2077 	add	hl, bc
+    00000A60 4D                    2078 	ld	c, l
+    00000A61 44                    2079 	ld	b, h
+    00000A62 0A                    2080 	ld	a, (bc)
+    00000A63 4F                    2081 	ld	c, a
+    00000A64 06 00                 2082 	ld	b, #0x00
+    00000A66 21r56r00              2083 	ld	hl, #_gb8_i
+    00000A69 7E                    2084 	ld	a, (hl)
+    00000A6A 81                    2085 	add	a, c
+    00000A6B 22                    2086 	ld	(hl+), a
+    00000A6C 7E                    2087 	ld	a, (hl)
+    00000A6D 88                    2088 	adc	a, b
+    00000A6E 77                    2089 	ld	(hl), a
+                                   2090 ;src/main.c:606: break;
+    00000A6F C3r80r0B              2091 	jp	00171$
+                                   2092 ;src/main.c:607: case GB8_INSTR_SPEC2_LOAD_I_SPR_VX:
+    00000A72                       2093 00155$:
+                                   2094 ;src/main.c:608: gb8_i = 5 * gb8_v[_instr_hi & 0x0F];
+    00000A72 F8 0A                 2095 	ldhl	sp,#10
+    00000A74 4E                    2096 	ld	c, (hl)
+    00000A75 06 00                 2097 	ld	b, #0x00
+    00000A77 79                    2098 	ld	a, c
+    00000A78 E6 0F                 2099 	and	a, #0x0f
+    00000A7A 4F                    2100 	ld	c, a
+    00000A7B 06 00                 2101 	ld	b, #0x00
+    00000A7D 21r45r00              2102 	ld	hl, #_gb8_v
+    00000A80 09                    2103 	add	hl, bc
+    00000A81 4D                    2104 	ld	c, l
+    00000A82 44                    2105 	ld	b, h
+    00000A83 0A                    2106 	ld	a, (bc)
+    00000A84 4F                    2107 	ld	c, a
+    00000A85 06 00                 2108 	ld	b, #0x00
+    00000A87 69                    2109 	ld	l, c
+    00000A88 60                    2110 	ld	h, b
+    00000A89 29                    2111 	add	hl, hl
+    00000A8A 29                    2112 	add	hl, hl
+    00000A8B 09                    2113 	add	hl, bc
+    00000A8C 7D                    2114 	ld	a, l
+    00000A8D 54                    2115 	ld	d, h
+    00000A8E 21r56r00              2116 	ld	hl, #_gb8_i
+    00000A91 22                    2117 	ld	(hl+), a
+    00000A92 72                    2118 	ld	(hl), d
+                                   2119 ;src/main.c:609: break;
+    00000A93 C3r80r0B              2120 	jp	00171$
+                                   2121 ;src/main.c:610: case GB8_INSTR_SPEC2_BCD_I_VX:
+    00000A96                       2122 00156$:
+                                   2123 ;src/main.c:611: gb8_bcd_vx(_instr_hi & 0x0F);
+    00000A96 F8 0A                 2124 	ldhl	sp,#10
+    00000A98 7E                    2125 	ld	a, (hl)
+    00000A99 E6 0F                 2126 	and	a, #0x0f
+    00000A9B F5                    2127 	push	af
+    00000A9C 33                    2128 	inc	sp
+    00000A9D CDr63r03              2129 	call	_gb8_bcd_vx
+    00000AA0 33                    2130 	inc	sp
+                                   2131 ;src/main.c:612: break;
+    00000AA1 C3r80r0B              2132 	jp	00171$
+                                   2133 ;src/main.c:614: for(uint8_t i = 0; i < ((_instr_hi & 0x0F) + 1); i++) gb8_mem[gb8_i + i] = gb8_v[i];
+    00000AA4                       2134 00215$:
+    00000AA4 F8 09                 2135 	ldhl	sp,#9
+    00000AA6 36 00                 2136 	ld	(hl), #0x00
+    00000AA8                       2137 00166$:
+    00000AA8 F8 0A                 2138 	ldhl	sp,#10
+    00000AAA 4E                    2139 	ld	c, (hl)
+    00000AAB 06 00                 2140 	ld	b, #0x00
+    00000AAD 79                    2141 	ld	a, c
+    00000AAE E6 0F                 2142 	and	a, #0x0f
+    00000AB0 4F                    2143 	ld	c, a
+    00000AB1 06 00                 2144 	ld	b, #0x00
+    00000AB3 03                    2145 	inc	bc
+    00000AB4 33                    2146 	inc	sp
+    00000AB5 33                    2147 	inc	sp
+    00000AB6 C5                    2148 	push	bc
+    00000AB7 2B                    2149 	dec	hl
+    00000AB8 4E                    2150 	ld	c, (hl)
+    00000AB9 06 00                 2151 	ld	b, #0x00
+    00000ABB F8 00                 2152 	ldhl	sp,#0
+    00000ABD 79                    2153 	ld	a, c
+    00000ABE 96                    2154 	sub	a, (hl)
+    00000ABF 23                    2155 	inc	hl
+    00000AC0 78                    2156 	ld	a, b
+    00000AC1 9E                    2157 	sbc	a, (hl)
+    00000AC2 78                    2158 	ld	a, b
+    00000AC3 57                    2159 	ld	d, a
+    00000AC4 5E                    2160 	ld	e, (hl)
+    00000AC5 CB 7B                 2161 	bit	7, e
+    00000AC7 28 07                 2162 	jr	Z,00411$
+    00000AC9 CB 7A                 2163 	bit	7, d
+    00000ACB 20 08                 2164 	jr	NZ,00412$
+    00000ACD BF                    2165 	cp	a, a
+    00000ACE 18 05                 2166 	jr	00412$
+    00000AD0                       2167 00411$:
+    00000AD0 CB 7A                 2168 	bit	7, d
+    00000AD2 28 01                 2169 	jr	Z,00412$
+    00000AD4 37                    2170 	scf
+    00000AD5                       2171 00412$:
+    00000AD5 D2r05r0B              2172 	jp	NC, 00158$
+    00000AD8 79                    2173 	ld	a, c
+    00000AD9 21r56r00              2174 	ld	hl, #_gb8_i
+    00000ADC 86                    2175 	add	a, (hl)
+    00000ADD 4F                    2176 	ld	c, a
+    00000ADE 78                    2177 	ld	a, b
+    00000ADF 23                    2178 	inc	hl
+    00000AE0 8E                    2179 	adc	a, (hl)
+    00000AE1 47                    2180 	ld	b, a
+    00000AE2 21r5Ar00              2181 	ld	hl, #_gb8_mem
+    00000AE5 09                    2182 	add	hl, bc
+    00000AE6 7D                    2183 	ld	a, l
+    00000AE7 54                    2184 	ld	d, h
+    00000AE8 F8 02                 2185 	ldhl	sp,#2
+    00000AEA 22                    2186 	ld	(hl+), a
+    00000AEB 72                    2187 	ld	(hl), d
+    00000AEC 11r45r00              2188 	ld	de, #_gb8_v
+    00000AEF F8 09                 2189 	ldhl	sp,#9
+    00000AF1 6E                    2190 	ld	l, (hl)
+    00000AF2 26 00                 2191 	ld	h, #0x00
+    00000AF4 19                    2192 	add	hl, de
+    00000AF5 4D                    2193 	ld	c, l
+    00000AF6 44                    2194 	ld	b, h
+    00000AF7 0A                    2195 	ld	a, (bc)
+    00000AF8 4F                    2196 	ld	c, a
+    00000AF9 F8 02                 2197 	ldhl	sp,#2
+    00000AFB 2A                    2198 	ld	a, (hl+)
+    00000AFC 66                    2199 	ld	h, (hl)
+    00000AFD 6F                    2200 	ld	l, a
+    00000AFE 71                    2201 	ld	(hl), c
+    00000AFF F8 09                 2202 	ldhl	sp,#9
+    00000B01 34                    2203 	inc	(hl)
+    00000B02 C3rA8r0A              2204 	jp	00166$
+    00000B05                       2205 00158$:
+                                   2206 ;src/main.c:615: gb8_i += (_instr_hi & 0x0F) + 1;
+    00000B05 C1                    2207 	pop	bc
+    00000B06 C5                    2208 	push	bc
+    00000B07 21r56r00              2209 	ld	hl, #_gb8_i
+    00000B0A 7E                    2210 	ld	a, (hl)
+    00000B0B 81                    2211 	add	a, c
+    00000B0C 22                    2212 	ld	(hl+), a
+    00000B0D 7E                    2213 	ld	a, (hl)
+    00000B0E 88                    2214 	adc	a, b
+    00000B0F 77                    2215 	ld	(hl), a
+                                   2216 ;src/main.c:616: break;
+    00000B10 C3r80r0B              2217 	jp	00171$
+                                   2218 ;src/main.c:618: for(uint8_t i = 0; i < ((_instr_hi & 0x0F) + 1); i++) gb8_v[i] = gb8_mem[gb8_i + i];
+    00000B13                       2219 00217$:
+    00000B13 F8 08                 2220 	ldhl	sp,#8
+    00000B15 36 00                 2221 	ld	(hl), #0x00
+    00000B17                       2222 00169$:
+    00000B17 F8 0A                 2223 	ldhl	sp,#10
+    00000B19 4E                    2224 	ld	c, (hl)
+    00000B1A 06 00                 2225 	ld	b, #0x00
+    00000B1C 79                    2226 	ld	a, c
+    00000B1D E6 0F                 2227 	and	a, #0x0f
+    00000B1F 4F                    2228 	ld	c, a
+    00000B20 06 00                 2229 	ld	b, #0x00
+    00000B22 03                    2230 	inc	bc
+    00000B23 33                    2231 	inc	sp
+    00000B24 33                    2232 	inc	sp
+    00000B25 C5                    2233 	push	bc
+    00000B26 2B                    2234 	dec	hl
+    00000B27 2B                    2235 	dec	hl
+    00000B28 4E                    2236 	ld	c, (hl)
+    00000B29 06 00                 2237 	ld	b, #0x00
+    00000B2B F8 00                 2238 	ldhl	sp,#0
+    00000B2D 79                    2239 	ld	a, c
+    00000B2E 96                    2240 	sub	a, (hl)
+    00000B2F 23                    2241 	inc	hl
+    00000B30 78                    2242 	ld	a, b
+    00000B31 9E                    2243 	sbc	a, (hl)
+    00000B32 78                    2244 	ld	a, b
+    00000B33 57                    2245 	ld	d, a
+    00000B34 5E                    2246 	ld	e, (hl)
+    00000B35 CB 7B                 2247 	bit	7, e
+    00000B37 28 07                 2248 	jr	Z,00413$
+    00000B39 CB 7A                 2249 	bit	7, d
+    00000B3B 20 08                 2250 	jr	NZ,00414$
+    00000B3D BF                    2251 	cp	a, a
+    00000B3E 18 05                 2252 	jr	00414$
+    00000B40                       2253 00413$:
+    00000B40 CB 7A                 2254 	bit	7, d
+    00000B42 28 01                 2255 	jr	Z,00414$
+    00000B44 37                    2256 	scf
+    00000B45                       2257 00414$:
+    00000B45 D2r75r0B              2258 	jp	NC, 00160$
+    00000B48 11r45r00              2259 	ld	de, #_gb8_v
+    00000B4B F8 08                 2260 	ldhl	sp,#8
+    00000B4D 6E                    2261 	ld	l, (hl)
+    00000B4E 26 00                 2262 	ld	h, #0x00
+    00000B50 19                    2263 	add	hl, de
+    00000B51 7D                    2264 	ld	a, l
+    00000B52 54                    2265 	ld	d, h
+    00000B53 F8 02                 2266 	ldhl	sp,#2
+    00000B55 22                    2267 	ld	(hl+), a
+    00000B56 72                    2268 	ld	(hl), d
+    00000B57 79                    2269 	ld	a, c
+    00000B58 21r56r00              2270 	ld	hl, #_gb8_i
+    00000B5B 86                    2271 	add	a, (hl)
+    00000B5C 4F                    2272 	ld	c, a
+    00000B5D 78                    2273 	ld	a, b
+    00000B5E 23                    2274 	inc	hl
+    00000B5F 8E                    2275 	adc	a, (hl)
+    00000B60 47                    2276 	ld	b, a
+    00000B61 21r5Ar00              2277 	ld	hl, #_gb8_mem
+    00000B64 09                    2278 	add	hl, bc
+    00000B65 4D                    2279 	ld	c, l
+    00000B66 44                    2280 	ld	b, h
+    00000B67 0A                    2281 	ld	a, (bc)
+    00000B68 4F                    2282 	ld	c, a
+    00000B69 F8 02                 2283 	ldhl	sp,#2
+    00000B6B 2A                    2284 	ld	a, (hl+)
+    00000B6C 66                    2285 	ld	h, (hl)
+    00000B6D 6F                    2286 	ld	l, a
+    00000B6E 71                    2287 	ld	(hl), c
+    00000B6F F8 08                 2288 	ldhl	sp,#8
+    00000B71 34                    2289 	inc	(hl)
+    00000B72 C3r17r0B              2290 	jp	00169$
+    00000B75                       2291 00160$:
+                                   2292 ;src/main.c:619: gb8_i += (_instr_hi & 0x0F) + 1;
+    00000B75 C1                    2293 	pop	bc
+    00000B76 C5                    2294 	push	bc
+    00000B77 21r56r00              2295 	ld	hl, #_gb8_i
+    00000B7A 7E                    2296 	ld	a, (hl)
+    00000B7B 81                    2297 	add	a, c
+    00000B7C 22                    2298 	ld	(hl+), a
+    00000B7D 7E                    2299 	ld	a, (hl)
+    00000B7E 88                    2300 	adc	a, b
+    00000B7F 77                    2301 	ld	(hl), a
+                                   2302 ;src/main.c:623: }
+    00000B80                       2303 00171$:
+                                   2304 ;src/main.c:624: }
+    00000B80 E8 0C                 2305 	add	sp, #12
+    00000B82 C9                    2306 	ret
+                                   2307 	.area _CODE
+                                   2308 	.area _CABS (ABS)

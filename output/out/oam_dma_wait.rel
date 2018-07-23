@@ -1,0 +1,23 @@
+XL4
+H 1 areas 5 global symbols
+M oam_dma_wait
+S _obj Ref00000000
+S .__.ABS. Def00000000
+A _CODE size B flags 0 addr 0
+S _oam_dma_wait Def00000000
+S _oam_dma_wait_end Def0000000A
+S _oam_dma_wait_size Def0000000A
+T 00 00 00 00
+R 00 00 00 00
+T 00 00 00 00 3E 00 00 00 00 E0 46 3E 28
+R 00 00 00 00 8B 05 00 00
+T 06 00 00 00
+R 00 00 00 00
+T 06 00 00 00 3D 20 FD C9
+R 00 00 00 00
+T 0A 00 00 00
+R 00 00 00 00
+T 0A 00 00 00
+R 00 00 00 00
+T 0A 00 00 00 0A
+R 00 00 00 00

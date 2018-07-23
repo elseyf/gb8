@@ -1,0 +1,73 @@
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 1.
+Hexadecimal [32-Bits]
+
+Symbol Table
+
+    .__.$$$.                                                    =   00002710 L
+    .__.ABS.                                                    =   00000000 G
+    .__.CPU.                                                    =   00000000 L
+    .__.H$L.                                                    =   00000000 L
+  1 _bg_pal                                                         00000123 GR
+  0 _copy_to_oam_obj                                                00000564 GR
+  0 _fastcpy                                                        00000343 GR
+  0 _fill                                                           00000361 GR
+    _gb8_display                                                    ******** GX
+    _hblank_transfer_counter                                    =   0000FFC0 G
+  0 _init_gameboy                                                   000002F8 GR
+  1 _joy0                                                           00000127 GR
+  0 _joypad_isr                                                     000002EE GR
+  0 _key_hold                                                       000005C5 GR
+  0 _key_push                                                       000005AC GR
+  0 _key_release                                                    000005D2 GR
+  0 _lcd_stat_isr                                                   000002C4 GR
+    _main                                                           ******** GX
+  1 _obj                                                            00000000 GR
+  1 _obj_pal0                                                       00000124 GR
+  1 _obj_pal1                                                       00000125 GR
+  1 _obj_slot                                                       00000126 GR
+  1 _offset_x                                                       0000012B GR
+  1 _offset_y                                                       0000012C GR
+  1 _old_joy0                                                       00000128 GR
+  0 _read_joypad                                                    00000588 GR
+  1 _scroll_x                                                       00000129 GR
+  1 _scroll_y                                                       0000012A GR
+  0 _serial_isr                                                     000002E4 GR
+  0 _set_bg_chr                                                     0000037C GR
+  0 _set_bg_map                                                     000003A6 GR
+  0 _set_bg_map_select                                              0000030D GR
+  0 _set_bg_map_tile                                                000003D0 GR
+  0 _set_obj                                                        0000053C GR
+  0 _set_obj_chr                                                    00000512 GR
+  0 _set_win_map                                                    0000045C GR
+  0 _set_win_map_select                                             00000328 GR
+  0 _set_win_map_tile                                               00000486 GR
+    _sp_buffer                                                      ******** GX
+  0 _timer_isr                                                      000002DB GR
+  0 _update_bg_map_tile                                             000003E0 GR
+  0 _update_win_map_tile                                            00000496 GR
+  1 _vblank_happened                                                0000012D GR
+  0 _vblank_isr                                                     00000000 GR
+  1 _vram_transfer_addr                                             00000121 GR
+  1 _vram_transfer_buffer                                           000000A1 GR
+  1 _vram_transfer_size                                             000000A0 GR
+    dst                                                         =   00000002 
+    obj                                                         =   00000002 
+    size                                                        =   00000005 
+    slot                                                        =   00000004 
+    src                                                         =   00000004 
+    val                                                         =   00000004 
+
+
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 2.
+Hexadecimal [32-Bits]
+
+Area Table
+
+   0 _CODE                                      size      5EB   flags    0
+   1 _DATA                                      size      12E   flags    0
+   2 _DABS                                      size        0   flags    8
+   3 _HOME                                      size        0   flags    0
+   4 _GSINIT                                    size        0   flags    0
+   5 _GSFINAL                                   size        0   flags    0
+   6 _CABS                                      size        0   flags    8
+

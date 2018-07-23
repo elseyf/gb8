@@ -1,0 +1,41 @@
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 1.
+Hexadecimal [32-Bits]
+
+
+
+                                      1 ;OAM DMA Routine, by el_seyf
+                                      2 
+                                      3 .module oam_dma_wait
+                                      4 
+                                      5 .globl _oam_dma_wait
+                                      6 .globl _oam_dma_wait_end
+                                      7 .globl _oam_dma_wait_size
+                                      8 .globl _obj
+    00000000                          9 _oam_dma_wait:
+    00000000 3E 00                   10     ld a, #(_obj >> 8)          ;Use DMA on OAM Buffer          ; 2 Bytes
+    00000002 E0 46                   11     ldh (0x46), a               ;Transfer takes 160 * 4 Cycles  ; 2 Bytes
+    00000004 3E 28                   12     ld a, #40                   ;Wait for (40 * 16)             ; 2 Bytes
+    00000006                         13     loop:                       ;         + 8 + 16 Cycles
+    00000006 3D                      14         dec a                   ;                               ; 1 Bytes
+    00000007 20 FD                   15         jr nz, loop             ;                               ; 2 Bytes
+    00000009 C9                      16     ret                         ;                               ; 1 Bytes
+                                     17                                 ;                               ; = 10 Bytes
+    0000000A                         18 _oam_dma_wait_end:
+    0000000A                         19 _oam_dma_wait_size:
+    0000000A 0A                      20     .db (_oam_dma_wait_end - _oam_dma_wait)
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 2.
+Hexadecimal [32-Bits]
+
+Symbol Table
+
+    .__.$$$.=   00002710 L   |     .__.ABS.=   00000000 G   |     .__.CPU.=   00000000 L
+    .__.H$L.=   00000000 L   |   0 _oam_dma    00000000 GR  |   0 _oam_dma    0000000A GR
+  0 _oam_dma    0000000A GR  |     _obj        ******** GX  |   0 loop        00000006 R
+
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy Z80-like CPU), page 3.
+Hexadecimal [32-Bits]
+
+Area Table
+
+   0 _CODE      size        B   flags    0
+

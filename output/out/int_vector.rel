@@ -1,0 +1,52 @@
+XL4
+H 8 areas 7 global symbols
+M int_vector
+S _vblank_isr Ref00000000
+S _serial_isr Ref00000000
+S _joypad_isr Ref00000000
+S _init_gameboy Ref00000000
+S _lcd_stat_isr Ref00000000
+S .__.ABS. Def00000000
+S _timer_isr Ref00000000
+A _CODE size 0 flags 0 addr 0
+A _INTERRUPT size 0 flags 8 addr 0
+A _INTERRUPT0 size 3 flags 8 addr 40
+A _INTERRUPT1 size 3 flags 8 addr 48
+A _INTERRUPT2 size 3 flags 8 addr 50
+A _INTERRUPT3 size 3 flags 8 addr 58
+A _INTERRUPT4 size 3 flags 8 addr 60
+A _INTERRUPT5 size 3 flags 8 addr 100
+T 40 00 00 00
+R 00 00 02 00
+T 40 00 00 00
+R 00 00 02 00
+T 40 00 00 00 C3 00 00
+R 00 00 02 00 02 05 00 00
+T 48 00 00 00
+R 00 00 03 00
+T 48 00 00 00
+R 00 00 03 00
+T 48 00 00 00 C3 00 00
+R 00 00 03 00 02 05 04 00
+T 50 00 00 00
+R 00 00 04 00
+T 50 00 00 00
+R 00 00 04 00
+T 50 00 00 00 C3 00 00
+R 00 00 04 00 02 05 06 00
+T 58 00 00 00
+R 00 00 05 00
+T 58 00 00 00
+R 00 00 05 00
+T 58 00 00 00 C3 00 00
+R 00 00 05 00 02 05 01 00
+T 60 00 00 00
+R 00 00 06 00
+T 60 00 00 00
+R 00 00 06 00
+T 60 00 00 00 C3 00 00
+R 00 00 06 00 02 05 02 00
+T 00 01 00 00
+R 00 00 07 00
+T 00 01 00 00 C3 00 00
+R 00 00 07 00 02 05 03 00
